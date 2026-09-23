@@ -1,0 +1,664 @@
+import { Bed, PuerperaData, GestanteData, CuretagemData, Sector } from '../types/bed';
+
+export const createEmptyPuerpera = (): PuerperaData => ({
+  deliveryType: 'cesarea_eletiva',
+  postpartumDay: 'D1',
+  breasts: ['apojadura', 'pega_ok'],
+  uterus: 'contraido',
+  lochia: 'fisiologico',
+  wound: 'curativo_limpo',
+  eliminations: ['diurese_espontanea', 'flatos_presentes', 'acesso_pervio'],
+  deambulation: 'presente',
+  oralDiet: 'aceitando_bem',
+  painLevel: '1-3',
+  tevRisk: 'baixo',
+  rhScreening: 'rh_pos',
+  temperature: 'afebril',
+  bloodPressure: '120/80',
+  heartRate: '75',
+  labExams: {
+    trSifilis: 'nao_reagente',
+    trHiv: 'nao_reagente',
+    trHepatites: 'nao_reagente',
+    tipagemMae: 'O+',
+  },
+  obstetricHistory: 'G01P00(n00 C 00)A00',
+  customNotes: ''
+});
+
+export const createEmptyGestante = (): GestanteData => ({
+  gestationalAge: 32,
+  gestationalDays: 0,
+  gestationalAgeMethod: 'Alegada',
+  gestationalAgeText: '',
+  admissionReason: ['ameaca_tpp'],
+  bloodPressure: 'normal',
+  bpValue: '120/80',
+  imminenceSigns: [],
+  fetalVitality: 'bcf_normal',
+  fhrValue: 140,
+  uterineTone: 'normal',
+  dynamics: 'irregular',
+  vaginalLosses: 'ausente',
+  edema: 'ausente',
+  vaginalExam: 'nao_realizado',
+  painLevel: '1-3',
+  obstetricHistory: 'G01P00(n00 C 00)A00',
+  customNotes: ''
+});
+
+export const createEmptyCuretagem = (): CuretagemData => ({
+  admissionReason: 'Abortamento Incompleto',
+  curetageDate: new Date().toLocaleDateString('pt-BR'),
+  curetageTime: '12:00',
+  anesthesia: 'Raquianestesia',
+  bleeding: 'leve',
+  bloodPressure: '120/80',
+  painLevel: '1-3',
+  obstetricHistory: 'G02P00(n00 C 00)A01',
+  customNotes: ''
+});
+
+export const SECTORS: { key: Sector; label: string; countDesc: string }[] = [
+  { key: 'enf_08', label: 'Enfermaria 08', countDesc: 'Leitos 08/01 a 08/05' },
+  { key: 'enf_09', label: 'Enfermaria 09', countDesc: 'Leitos 09/06 a 09/10' },
+  { key: 'enf_10', label: 'Enfermaria 10', countDesc: 'Leitos 10/11 a 10/15' },
+  { key: 'enf_11', label: 'Enfermaria 11', countDesc: 'Leitos 11/16 a 11/20' },
+  { key: 'especiais', label: 'Setores Especiais', countDesc: 'Lírio, Isolamento, UCINCO' },
+];
+
+export const INITIAL_BEDS: Bed[] = [
+  // Enfermaria 08
+  {
+    id: 1,
+    label: '08/01',
+    sector: 'enf_08',
+    patientName: 'Nivia Raquel Pio da Silva',
+    age: '39a',
+    admissionDate: '18/09',
+    admissionTime: '20:50',
+    diagnosis: 'PEG Puerperal (19º DPO Cesárea)',
+    type: 'puerpera',
+    isReviewed: true,
+    avpSite: 'MSD',
+    avpDate: '18/09',
+    pendencias: 'Prog. alta amanhã (23/09)',
+    intercorrencias: 'Cefaleia moderada | Ceftriaxona D3',
+    obstetricHistory: 'G03P03(n03 C 00)A00',
+    bloodPressure: '160x111',
+    hda: 'PACIENTE G03P03(n03 C 00)A00 EM 04/09/26 DE PÓS CESÁRIA, DEU ENTRADA AO SERVIÇO 18/09/2026, A CEFALEIA E DOR LOMBAR E PA ELEVADA DE 160X111MMHG. SENDO SULFATADA.',
+    comorbidades: 'NEGA',
+    muc: 'NEGA',
+    alergias: 'NEGA ALERGIA',
+    internmentDays: 4,
+    examesLabText: `LAB 18/09/26: UREIA: 49| HB: 9,6| HT: 28,2| LEUCO: 12.710| PLAQ: 497.000| CREAT: 1,18| TGO: 27 | TGP: 33| EAS: LEUCO 7 HEMACIAS 15\nLAB 20/09/26: UREIA: 25| CREAT: 1| TGO: 30| TGP: 43| BILI T: 0,43 BILI D: 0,1| BILI IND: 0,33| LDH: 552| HB: 12,1| HT: 37,0| LEUCO: 12540| PLAQ: 677.0000| EAS: HEM: 462/ LEUCO: 389`,
+    hdText: 'PEG PÓS PARTO + HELLP PARCIAL',
+    condutaText: `SUPORTE CLÍNICO\nATB - D2\nSOLICITO LAB\nAVALIAR ALTA 23/09/26`,
+    data: {
+      ...createEmptyPuerpera(),
+      deliveryType: 'cesarea_urgencia',
+      postpartumDay: 'D3+',
+      painLevel: '0',
+      bloodPressure: '160x111',
+      obstetricHistory: 'G03P03(n03 C 00)A00',
+      heartRate: '60',
+      customNotes: 'Cefaleia moderada. Em uso de Ceftriaxona D3.'
+    }
+  },
+  {
+    id: 2,
+    label: '08/02',
+    sector: 'enf_08',
+    patientName: 'Carla Beatriz Freitas Santos',
+    age: '15a',
+    admissionDate: '22/09',
+    admissionTime: '15:44',
+    diagnosis: 'Aborto Incompleto (POI Curetagem)',
+    type: 'curetagem',
+    isReviewed: false,
+    avpSite: 'MSD',
+    avpDate: '22/09',
+    pendencias: 'Observar sangramento vaginal (STV)',
+    intercorrencias: 'POI Curetagem sob raquianestesia',
+    data: {
+      ...createEmptyCuretagem(),
+      admissionReason: 'Aborto Incompleto',
+      anesthesia: 'Raquianestesia',
+      bleeding: 'leve'
+    }
+  },
+  {
+    id: 3,
+    label: '08/03',
+    sector: 'enf_08',
+    patientName: 'Vago',
+    age: '',
+    admissionDate: '',
+    admissionTime: '',
+    diagnosis: 'Leito disponível',
+    type: 'vago',
+    isReviewed: false,
+    avpSite: '',
+    avpDate: '',
+    pendencias: '',
+    intercorrencias: '',
+    data: createEmptyPuerpera()
+  },
+  {
+    id: 4,
+    label: '08/04',
+    sector: 'enf_08',
+    patientName: 'Lidia Sousa Macedo',
+    age: '35a',
+    admissionDate: '22/09',
+    admissionTime: '00:40',
+    diagnosis: 'Adm ITU (IG=24 sem)',
+    type: 'gestante',
+    isReviewed: true,
+    avpSite: 'MSD',
+    avpDate: '22/09',
+    pendencias: 'Ag. resultado de exames laboratoriais',
+    intercorrencias: 'Alergia a Dipirona | USG 23s3d | Ceftriaxona D1',
+    data: {
+      ...createEmptyGestante(),
+      gestationalAge: 24,
+      admissionReason: ['itu_pielonefrite'],
+      fhrValue: 144,
+      customNotes: 'Alergia a Dipirona. Ceftriaxona D1.'
+    }
+  },
+  {
+    id: 5,
+    label: '08/05',
+    sector: 'enf_08',
+    patientName: 'Maria Vitoria Souza Ribeiro',
+    age: '12a',
+    admissionDate: '22/09',
+    admissionTime: '14:00',
+    diagnosis: 'Ameaça de Aborto',
+    type: 'gestante',
+    isReviewed: false,
+    avpSite: 'MSD',
+    avpDate: '22/09',
+    pendencias: 'Ag. coleta laboratorial + EAS',
+    intercorrencias: 'Alergia a Dipirona | Cólicas + STV leve',
+    data: {
+      ...createEmptyGestante(),
+      gestationalAge: 20,
+      admissionReason: ['dor_abdominal'],
+      vaginalLosses: 'sangramento',
+      customNotes: 'Alergia a Dipirona. Queixa de cólicas e STV leve.'
+    }
+  },
+
+  // Enfermaria 09
+  {
+    id: 6,
+    label: '09/06',
+    sector: 'enf_09',
+    patientName: 'Jaqueline Pereira Costa',
+    age: '22a',
+    admissionDate: '22/09',
+    admissionTime: '17:20',
+    diagnosis: 'Adm ITU (IG=37s5d)',
+    type: 'gestante',
+    isReviewed: false,
+    avpSite: 'MSD',
+    avpDate: '22/09',
+    pendencias: 'Acompanhar urocultura',
+    intercorrencias: 'Ceftriaxona D1',
+    data: {
+      ...createEmptyGestante(),
+      gestationalAge: 37,
+      admissionReason: ['itu_pielonefrite'],
+      fhrValue: 138
+    }
+  },
+  {
+    id: 7,
+    label: '09/07',
+    sector: 'enf_09',
+    patientName: 'RN de Ana Clara da Penha Rosa',
+    age: '16d',
+    admissionDate: '04/09',
+    admissionTime: '11:45',
+    diagnosis: 'RNT-AIG / Sepse Neonatal / Meningite',
+    type: 'puerpera',
+    isReviewed: true,
+    avpSite: 'MSD',
+    avpDate: '13/09',
+    pendencias: 'Peso diário | Ag. lab | Alta prevista amanhã (23/09)',
+    intercorrencias: 'Oxa D14 + Cefepima D13 | Monilíase oral',
+    rn: {
+      feeding: 'AMEX',
+      physiologicalEliminations: true,
+      heartTest: 'ok',
+      weight: '2.850g',
+      notes: 'Alta prevista para amanhã (23/09)'
+    },
+    data: {
+      ...createEmptyPuerpera(),
+      postpartumDay: 'D3+'
+    }
+  },
+  {
+    id: 8,
+    label: '09/08',
+    sector: 'enf_09',
+    patientName: 'Vitória Edivania de Oliveira Vilanova',
+    age: '27a',
+    admissionDate: '21/09',
+    admissionTime: '21:25',
+    diagnosis: 'Adm Dor Abdominal (IG=25 sem)',
+    type: 'gestante',
+    isReviewed: false,
+    avpSite: 'MSE',
+    avpDate: '21/09',
+    pendencias: 'Ag. resultado de exames e USG obstétrico',
+    intercorrencias: 'Estável',
+    data: {
+      ...createEmptyGestante(),
+      gestationalAge: 25,
+      admissionReason: ['dor_abdominal'],
+      fhrValue: 142
+    }
+  },
+  {
+    id: 9,
+    label: '09/09',
+    sector: 'enf_09',
+    patientName: 'Kemily Costa Barbosa da Silva',
+    age: '21a',
+    admissionDate: '22/09',
+    admissionTime: '16:45',
+    diagnosis: 'POIPN (Parto Normal às 15:36h)',
+    type: 'puerpera',
+    isReviewed: true,
+    avpSite: 'MS',
+    avpDate: '22/09',
+    pendencias: 'Ag. Teste do Coraçãozinho 23/09 às 15:36h',
+    intercorrencias: 'Obs STV | AMEX',
+    rn: {
+      feeding: 'AMEX',
+      physiologicalEliminations: true,
+      heartTest: 'agendado',
+      heartTestDate: '23/09 às 15:36'
+    },
+    data: {
+      ...createEmptyPuerpera(),
+      deliveryType: 'vaginal',
+      postpartumDay: 'D0'
+    }
+  },
+  {
+    id: 10,
+    label: '09/10',
+    sector: 'enf_09',
+    patientName: 'Vago',
+    age: '',
+    admissionDate: '',
+    admissionTime: '',
+    diagnosis: 'Leito disponível',
+    type: 'vago',
+    isReviewed: false,
+    avpSite: '',
+    avpDate: '',
+    pendencias: '',
+    intercorrencias: '',
+    data: createEmptyPuerpera()
+  },
+
+  // Enfermaria 10
+  {
+    id: 11,
+    label: '10/11',
+    sector: 'enf_10',
+    patientName: 'Patricia Maria Gomes',
+    age: '33a',
+    admissionDate: '22/09',
+    admissionTime: '15:08',
+    diagnosis: 'POIPN (13:56h) G8P5NA2',
+    type: 'puerpera',
+    isReviewed: false,
+    avpSite: 'MS',
+    avpDate: '22/09',
+    pendencias: 'Ag. Teste do Coraçãozinho 23/09 às 13:56h',
+    intercorrencias: 'Obs STV | AMEX | Diurese mecânica +',
+    rn: {
+      feeding: 'AMEX',
+      physiologicalEliminations: true,
+      heartTest: 'agendado',
+      heartTestDate: '23/09 às 13:56'
+    },
+    data: {
+      ...createEmptyPuerpera(),
+      deliveryType: 'vaginal',
+      postpartumDay: 'D0'
+    }
+  },
+  {
+    id: 12,
+    label: '10/12',
+    sector: 'enf_10',
+    patientName: 'Ana Jaqueline dos Santos Silva',
+    age: '16a',
+    admissionDate: '21/09',
+    admissionTime: '21:30',
+    diagnosis: 'Adm PPNI (Parto Normal 23:13h)',
+    type: 'puerpera',
+    isReviewed: true,
+    avpSite: 'MSD',
+    avpDate: '21/09',
+    pendencias: 'Ag. Teste do Coraçãozinho 22/09 às 20:13h | Ag. TS',
+    intercorrencias: 'STV ok | AMEX | EF+',
+    rn: {
+      feeding: 'AMEX',
+      physiologicalEliminations: true,
+      heartTest: 'agendado',
+      heartTestDate: '22/09 às 20:13'
+    },
+    data: {
+      ...createEmptyPuerpera(),
+      deliveryType: 'vaginal',
+      postpartumDay: 'D1'
+    }
+  },
+  {
+    id: 13,
+    label: '10/13',
+    sector: 'enf_10',
+    patientName: 'Erica Marina Gomes da Silva',
+    age: '31a',
+    admissionDate: '21/09',
+    admissionTime: '23:20',
+    diagnosis: 'Adm PPNI (Parto Normal 22:13h)',
+    type: 'puerpera',
+    isReviewed: true,
+    avpSite: 'MSD',
+    avpDate: '21/09',
+    pendencias: 'Ag. Teste do Coraçãozinho 22/09 às 22:13h',
+    intercorrencias: 'STV ok | AMEX | EF+',
+    rn: {
+      feeding: 'AMEX',
+      physiologicalEliminations: true,
+      heartTest: 'agendado',
+      heartTestDate: '22/09 às 22:13'
+    },
+    data: {
+      ...createEmptyPuerpera(),
+      deliveryType: 'vaginal',
+      postpartumDay: 'D1'
+    }
+  },
+  {
+    id: 14,
+    label: '10/14',
+    sector: 'enf_10',
+    patientName: 'Antonia Costa Marques',
+    age: '39a',
+    admissionDate: '22/09',
+    admissionTime: '12:00',
+    diagnosis: 'PPNI (Parto Normal)',
+    type: 'puerpera',
+    isReviewed: false,
+    avpSite: 'MSD',
+    avpDate: '22/09',
+    pendencias: 'Ag. Teste do Coraçãozinho 23/09 às 10:36h',
+    intercorrencias: 'STV ok | AMEX | EF+',
+    rn: {
+      feeding: 'AMEX',
+      physiologicalEliminations: true,
+      heartTest: 'agendado',
+      heartTestDate: '23/09 às 10:36'
+    },
+    data: {
+      ...createEmptyPuerpera(),
+      deliveryType: 'vaginal',
+      postpartumDay: 'D0'
+    }
+  },
+  {
+    id: 15,
+    label: '10/15',
+    sector: 'enf_10',
+    patientName: 'Taina Santana da Silva',
+    age: '28a',
+    admissionDate: '22/09',
+    admissionTime: '10:55',
+    diagnosis: 'POIC Cesárea (09:52h)',
+    type: 'puerpera',
+    isReviewed: true,
+    avpSite: 'MSD',
+    avpDate: '22/09',
+    pendencias: 'Ag. Teste do Coraçãozinho 23/09 às 09:52h',
+    intercorrencias: 'STV ok | AMEX | EF+',
+    rn: {
+      feeding: 'AMEX',
+      physiologicalEliminations: true,
+      heartTest: 'agendado',
+      heartTestDate: '23/09 às 09:52'
+    },
+    data: {
+      ...createEmptyPuerpera(),
+      deliveryType: 'cesarea_eletiva',
+      postpartumDay: 'D0'
+    }
+  },
+
+  // Enfermaria 11
+  {
+    id: 16,
+    label: '11/16',
+    sector: 'enf_11',
+    patientName: 'Vago',
+    age: '',
+    admissionDate: '',
+    admissionTime: '',
+    diagnosis: 'Leito disponível',
+    type: 'vago',
+    isReviewed: false,
+    avpSite: '',
+    avpDate: '',
+    pendencias: '',
+    intercorrencias: '',
+    data: createEmptyPuerpera()
+  },
+  {
+    id: 17,
+    label: '11/17',
+    sector: 'enf_11',
+    patientName: 'Amanda Larissa Silva',
+    age: '16a',
+    admissionDate: '21/09',
+    admissionTime: '18:35',
+    diagnosis: 'POI Cesárea pós-datismo',
+    type: 'puerpera',
+    isReviewed: true,
+    avpSite: 'MS',
+    avpDate: '21/09',
+    pendencias: 'Ag. resultado de Tipagem Sanguínea (TS)',
+    intercorrencias: 'AMEX | EF+ | Teste Coraçãozinho OK',
+    rn: {
+      feeding: 'AMEX',
+      physiologicalEliminations: true,
+      heartTest: 'ok'
+    },
+    data: {
+      ...createEmptyPuerpera(),
+      deliveryType: 'cesarea_eletiva',
+      postpartumDay: 'D1'
+    }
+  },
+  {
+    id: 18,
+    label: '11/18',
+    sector: 'enf_11',
+    patientName: 'Vago',
+    age: '',
+    admissionDate: '',
+    admissionTime: '',
+    diagnosis: 'Leito disponível',
+    type: 'vago',
+    isReviewed: false,
+    avpSite: '',
+    avpDate: '',
+    pendencias: '',
+    intercorrencias: '',
+    data: createEmptyPuerpera()
+  },
+  {
+    id: 19,
+    label: '11/19',
+    sector: 'enf_11',
+    patientName: 'Vago',
+    age: '',
+    admissionDate: '',
+    admissionTime: '',
+    diagnosis: 'Leito disponível',
+    type: 'vago',
+    isReviewed: false,
+    avpSite: '',
+    avpDate: '',
+    pendencias: '',
+    intercorrencias: '',
+    data: createEmptyPuerpera()
+  },
+  {
+    id: 20,
+    label: '11/20',
+    sector: 'enf_11',
+    patientName: 'RN de Rayssa Caroline Nascimento',
+    age: '2d',
+    admissionDate: '19/09',
+    admissionTime: '08:00',
+    diagnosis: 'Tratamento de Sífilis Congênita',
+    type: 'puerpera',
+    isReviewed: true,
+    avpSite: 'MS',
+    avpDate: '19/09',
+    pendencias: 'Ag. VDRL + TS | Peso diário',
+    intercorrencias: 'TR Sífilis + | Penicilina D2/10 | Berço aquecido | Mãe em uso de Noripurum D1',
+    rn: {
+      feeding: 'LML',
+      physiologicalEliminations: true,
+      heartTest: 'ok',
+      notes: 'LML + FI 10ml se necessário. Penicilina Cristalina D2/10.'
+    },
+    data: {
+      ...createEmptyPuerpera(),
+      postpartumDay: 'D2'
+    }
+  },
+
+  // Setores Especiais
+  {
+    id: 21,
+    label: 'LÍRIO 01',
+    sector: 'especiais',
+    patientName: 'Vago',
+    age: '',
+    admissionDate: '',
+    admissionTime: '',
+    diagnosis: 'Leito disponível',
+    type: 'vago',
+    isReviewed: false,
+    avpSite: '',
+    avpDate: '',
+    pendencias: '',
+    intercorrencias: '',
+    data: createEmptyPuerpera()
+  },
+  {
+    id: 22,
+    label: 'LÍRIO 02',
+    sector: 'especiais',
+    patientName: 'Vago',
+    age: '',
+    admissionDate: '',
+    admissionTime: '',
+    diagnosis: 'Leito disponível',
+    type: 'vago',
+    isReviewed: false,
+    avpSite: '',
+    avpDate: '',
+    pendencias: '',
+    intercorrencias: '',
+    data: createEmptyPuerpera()
+  },
+  {
+    id: 23,
+    label: 'ISOL. 1',
+    sector: 'especiais',
+    patientName: 'Vago',
+    age: '',
+    admissionDate: '',
+    admissionTime: '',
+    diagnosis: 'Leito de Isolamento disponível',
+    type: 'vago',
+    isReviewed: false,
+    avpSite: '',
+    avpDate: '',
+    pendencias: '',
+    intercorrencias: '',
+    data: createEmptyPuerpera()
+  },
+  {
+    id: 24,
+    label: 'UCINCO 1',
+    sector: 'especiais',
+    patientName: 'RN de Antonia Costa Marques',
+    age: '0d',
+    admissionDate: '22/09',
+    admissionTime: '13:00',
+    diagnosis: 'Desconforto Respiratório Transitório',
+    type: 'puerpera',
+    isReviewed: false,
+    avpSite: 'MSD',
+    avpDate: '22/09',
+    pendencias: 'Monitorização respiratória contínua',
+    intercorrencias: 'Estável | AMEX | EF+',
+    rn: {
+      feeding: 'AMEX',
+      physiologicalEliminations: true,
+      heartTest: 'agendado'
+    },
+    data: {
+      ...createEmptyPuerpera(),
+      postpartumDay: 'D0'
+    }
+  },
+  {
+    id: 25,
+    label: 'UCINCO 2',
+    sector: 'especiais',
+    patientName: 'Vago',
+    age: '',
+    admissionDate: '',
+    admissionTime: '',
+    diagnosis: 'Leito UCINCO disponível',
+    type: 'vago',
+    isReviewed: false,
+    avpSite: '',
+    avpDate: '',
+    pendencias: '',
+    intercorrencias: '',
+    data: createEmptyPuerpera()
+  },
+  {
+    id: 26,
+    label: 'BERÇO AQUEC.',
+    sector: 'especiais',
+    patientName: 'Vago',
+    age: '',
+    admissionDate: '',
+    admissionTime: '',
+    diagnosis: 'Berço Aquecido disponível',
+    type: 'vago',
+    isReviewed: false,
+    avpSite: '',
+    avpDate: '',
+    pendencias: '',
+    intercorrencias: '',
+    data: createEmptyPuerpera()
+  }
+];
