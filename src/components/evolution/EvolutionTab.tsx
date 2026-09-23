@@ -156,7 +156,7 @@ export const EvolutionTab: React.FC<EvolutionTabProps> = ({
 
             <button
               onClick={copyToClipboard}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer order-first sm:order-none"
             >
               <Copy className="w-3.5 h-3.5" />
               <span>Copiar Evolução</span>
@@ -477,10 +477,10 @@ export const EvolutionTab: React.FC<EvolutionTabProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => quickAppendConduta('AVALIAR ALTA')}
-                      className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer"
+                      onClick={() => quickAppendConduta('ALTA HOSPITALAR COM ORIENTAÇÕES')}
+                      className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 cursor-pointer font-semibold"
                     >
-                      + Alta
+                      + Alta c/ Orientações
                     </button>
                     <button
                       type="button"
@@ -488,6 +488,21 @@ export const EvolutionTab: React.FC<EvolutionTabProps> = ({
                       className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer"
                     >
                       + ATB
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const atestPac = bed.data?.atestadoPaciente || bed.atestadoPaciente;
+                        const dias = bed.data?.atestadoPacienteDias || bed.atestadoPacienteDias || '14 DIAS';
+                        if (atestPac === 'licenca_maternidade') {
+                          quickAppendConduta('LICENÇA MATERNIDADE (120 DIAS)');
+                        } else {
+                          quickAppendConduta(`ATESTADO MÉDICO (${dias.toUpperCase()})`);
+                        }
+                      }}
+                      className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 cursor-pointer"
+                    >
+                      + Atestado
                     </button>
                   </div>
                 </div>

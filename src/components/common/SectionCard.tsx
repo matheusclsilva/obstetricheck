@@ -19,16 +19,16 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   children
 }) => {
   return (
-    <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs mb-3 transition-all hover:border-slate-300">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-2xs mb-2.5 sm:mb-3 transition-all hover:border-slate-300">
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
         <div className="flex items-center gap-2">
-          <div className={`w-7 h-7 rounded-lg ${bg} flex items-center justify-center`}>
-            <Icon className={`w-4 h-4 ${color}`} />
+          <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg ${bg} flex items-center justify-center shrink-0`}>
+            <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${color}`} />
           </div>
-          <h3 className="font-semibold text-slate-800 text-sm tracking-tight">{title}</h3>
+          <h3 className="font-bold text-slate-800 text-xs sm:text-sm tracking-tight">{title}</h3>
         </div>
         {badge && (
-          <span className="text-[10px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 px-1.5 sm:px-2 py-0.5 rounded-md">
             {badge}
           </span>
         )}

@@ -33,6 +33,11 @@ export interface PuerperaData {
     tipagemBebe?: string;
     vdrl?: string;
   };
+  atestadoPaciente?: 'nao' | 'sim' | 'licenca_maternidade';
+  atestadoPacienteDias?: string;
+  atestadoAcompanhante?: 'nao' | 'sim';
+  atestadoAcompanhanteNome?: string;
+  atestadoAcompanhanteDias?: string;
   customNotes: string;
 }
 
@@ -54,6 +59,11 @@ export interface GestanteData {
   vaginalExam: 'nao_realizado' | 'fechado' | 'dilatando';
   painLevel: '0' | '1-3' | '4-6' | '7-10';
   obstetricHistory?: string; // ex: 'G03P03(n03 C 00)A00'
+  atestadoPaciente?: 'nao' | 'sim' | 'licenca_maternidade';
+  atestadoPacienteDias?: string;
+  atestadoAcompanhante?: 'nao' | 'sim';
+  atestadoAcompanhanteNome?: string;
+  atestadoAcompanhanteDias?: string;
   customNotes: string;
 }
 
@@ -67,6 +77,11 @@ export interface CuretagemData {
   heartRate?: string;
   painLevel: '0' | '1-3' | '4-6' | '7-10';
   obstetricHistory?: string; // ex: 'G03P03(n03 C 00)A00'
+  atestadoPaciente?: 'nao' | 'sim' | 'licenca_maternidade';
+  atestadoPacienteDias?: string;
+  atestadoAcompanhante?: 'nao' | 'sim';
+  atestadoAcompanhanteNome?: string;
+  atestadoAcompanhanteDias?: string;
   customNotes: string;
 }
 
@@ -97,6 +112,11 @@ export interface Bed {
   intercorrencias: string;
   obstetricHistory?: string; // ex: 'G03P03(n03 C 00)A00'
   bloodPressure?: string; // ex: '120/80' ou '160x111'
+  atestadoPaciente?: 'nao' | 'sim' | 'licenca_maternidade';
+  atestadoPacienteDias?: string;
+  atestadoAcompanhante?: 'nao' | 'sim';
+  atestadoAcompanhanteNome?: string;
+  atestadoAcompanhanteDias?: string;
   // Campos da Evolução Médica (conforme modelo evolucao.txt)
   hda?: string;
   comorbidades?: string;

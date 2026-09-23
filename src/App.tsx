@@ -171,6 +171,11 @@ export default function App() {
           ...b,
           bloodPressure: nextBP,
           obstetricHistory: nextObst,
+          atestadoPaciente: updatedData.atestadoPaciente ?? b.atestadoPaciente,
+          atestadoPacienteDias: updatedData.atestadoPacienteDias ?? b.atestadoPacienteDias,
+          atestadoAcompanhante: updatedData.atestadoAcompanhante ?? b.atestadoAcompanhante,
+          atestadoAcompanhanteNome: updatedData.atestadoAcompanhanteNome ?? b.atestadoAcompanhanteNome,
+          atestadoAcompanhanteDias: updatedData.atestadoAcompanhanteDias ?? b.atestadoAcompanhanteDias,
           data: updatedData
         };
         saveBedToSupabase(updatedBed);
@@ -361,19 +366,19 @@ export default function App() {
 
       {/* Active Clinical Alerts Alert Box */}
       {activeAlerts.length > 0 && activeTab !== 'shift_summary' && (
-        <div className="bg-rose-50 border-b border-rose-200 px-3 sm:px-6 py-2.5">
+        <div className="bg-rose-50 border-b border-rose-200 px-2.5 sm:px-6 py-2">
           <div className="max-w-7xl mx-auto space-y-1.5">
             {activeAlerts.map((alt, idx) => (
               <div
                 key={idx}
-                className="flex items-start justify-between gap-2 text-xs text-rose-900 bg-white/90 p-2.5 rounded-xl border border-rose-200 shadow-2xs"
+                className="flex items-start justify-between gap-2 text-xs text-rose-900 bg-white/90 p-2 sm:p-2.5 rounded-xl border border-rose-200 shadow-2xs"
               >
                 <div>
                   <strong className="font-bold text-rose-700">{alt.title}: </strong>
                   <span>{alt.desc}</span>
                 </div>
                 {alt.actionRequired && (
-                  <span className="bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase shrink-0">
+                  <span className="bg-rose-600 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md uppercase shrink-0">
                     {alt.actionRequired}
                   </span>
                 )}
@@ -384,7 +389,7 @@ export default function App() {
       )}
 
       {/* Main Workspace Body */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 flex-1 w-full">
+      <main className="max-w-7xl mx-auto px-2.5 sm:px-6 py-2.5 sm:py-4 flex-1 w-full">
         {/* TAB 1: CHECKLIST */}
         {activeTab === 'checklist' && (
           <div>

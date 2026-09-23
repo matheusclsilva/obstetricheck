@@ -213,6 +213,11 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
   const hdText = bed.hdText || bed.diagnosis?.toUpperCase() || (isPuerpera ? 'PUERPÉRIO PÓS PARTO' : isGestante ? 'GESTAÇÃO TÓPICA' : 'ABORTO INCOMPLETO');
 
   // 10. CONDUTA
+  const isVaginal = d.deliveryType === 'vaginal' || d.deliveryType === 'forceps';
+  const isPast24hVaginal = isVaginal && (d.postpartumDay === 'D1' || d.postpartumDay === 'D2' || d.postpartumDay === 'D3+');
+  const isPast48hCesarea = !isVaginal && (d.postpartumDay === 'D2' || d.postpartumDay === 'D3+');
+  const isEligibleForDischarge = isPuerpera && (isPast24hVaginal || isPast48hCesarea) && !bpEval.isHypertensiveCrisis;
+
   let condutaText = bed.condutaText;
   if (!condutaText) {
     if (bpEval.isHypertensiveCrisis) {
@@ -220,12 +225,16 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
     } else if (bpEval.isElevated) {
       condutaText = `SUPORTE CLÍNICO\nCONTROLE DE PA DE 4/4H\nAVALIAR METILDOPA\nPESQUISA DE SINAIS DE IMINÊNCIA\nSOLICITO LAB`;
     } else if (isPuerpera) {
-      condutaText = `SUPORTE CLÍNICO\nPRESCRIÇÃO ORAL\nOBSERVAR SANGRAMENTO VAGINAL\nAVALIAR ALTA`;
+      const altaLinha = isEligibleForDischarge ? 'ALTA HOSPITALAR COM ORIENTAÇÕES' : 'AVALIAR ALTA';
+      condutaText = `SUPORTE CLÍNICO\nPRESCRIÇÃO ORAL\nOBSERVAR SANGRAMENTO VAGINAL\n${altaLinha}`;
     } else if (isGestante) {
       condutaText = `SUPORTE CLÍNICO\nCONTROLE DE SSVV E BCF DE 4/4H\nSOLICITO LAB\nAVALIAR EVOLUÇÃO CLÍNICA`;
     } else {
-      condutaText = `SUPORTE CLÍNICO\nOBSERVAR FORRO VAGINAL\nORIENTAÇÕES DE ALTA`;
+      condutaText = `SUPORTE CLÍNICO\nOBSERVAR FORRO VAGINAL\nALTA HOSPITALAR COM ORIENTAÇÕES`;
     }
+  } else if (isEligibleForDischarge && /AVALIAR ALTA/i.test(condutaText)) {
+    // Atualiza automaticamente texto genérico antigo "AVALIAR ALTA" para "ALTA HOSPITALAR COM ORIENTAÇÕES"
+    condutaText = condutaText.replace(/AVALIAR ALTA/gi, 'ALTA HOSPITALAR COM ORIENTAÇÕES');
   }
 
   // MONTAGEM FINAL DO TEXTO (100% FIEL AO MODELO DO USUÁRIO)
@@ -263,12 +272,34 @@ export const generateDischargePaperwork = (bed: Bed): string => {
   lines.push(`PACIENTE: ${bed.patientName} | LEITO: ${bed.label} | DATA DE ALTA: ${today}`);
   lines.push(`--------------------------------------------------------------------------------`);
 
+  const d = bed.data || {};
+  const atestadoPac = d.atestadoPaciente || bed.atestadoPaciente || 'nao';
+  const atestadoPacDias = d.atestadoPacienteDias || bed.atestadoPacienteDias || '';
+  const atestadoAcomp = d.atestadoAcompanhante || bed.atestadoAcompanhante || 'nao';
+  const acompNome = d.atestadoAcompanhanteNome || bed.atestadoAcompanhanteNome || '';
+  const acompDias = d.atestadoAcompanhanteDias || bed.atestadoAcompanhanteDias || '';
+
   lines.push(`DOCUMENTOS A IMPRIMIR CONFORME PROTOCOLO:`);
   lines.push(`[ ] 1. Evolução e Prescrição (1 via)`);
   lines.push(`[ ] 2. SUMÁRIO DE ALTA (2 vias)`);
   lines.push(`[ ] 3. Receituário Médico (1 via)`);
-  lines.push(`[ ] 4. Atestado Médico ou Licença Maternidade (1 via)`);
-  lines.push(`[ ] 5. Folha de Orientações da Puérpera (1 via)`);
+
+  if (atestadoPac === 'sim') {
+    lines.push(`[X] 4. Atestado Médico da Paciente (1 via) - SIM (${atestadoPacDias || 'Dias a preencher'})`);
+  } else if (atestadoPac === 'licenca_maternidade') {
+    lines.push(`[X] 4. Licença Maternidade da Paciente (1 via) - SIM (120 dias)`);
+  } else {
+    lines.push(`[ ] 4. Atestado Médico da Paciente - NÃO NECESSITA`);
+  }
+
+  if (atestadoAcomp === 'sim') {
+    const acompDesc = [acompNome, acompDias || 'Período de internação'].filter(Boolean).join(' - ');
+    lines.push(`[X] 5. Atestado / Declaração de Acompanhante (1 via) - SIM (${acompDesc})`);
+  } else {
+    lines.push(`[ ] 5. Atestado de Acompanhante - NÃO NECESSITA`);
+  }
+
+  lines.push(`[ ] 6. Folha de Orientações da Puérpera/Paciente (1 via)`);
 
   lines.push(`\nRECEITUÁRIO DE MEDICAMENTOS (USO ORAL):`);
   const typeKey = bed.type === 'curetagem' ? 'curetagem' : (bed.data?.deliveryType?.includes('cesarea') ? 'cesarea' : 'partoNormal');

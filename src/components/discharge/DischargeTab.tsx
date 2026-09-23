@@ -28,8 +28,8 @@ export const DischargeTab: React.FC<DischargeTabProps> = ({ bed, onShowToast }) 
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-100">
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-3.5 sm:p-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-4 mb-3 sm:mb-4 border-b border-slate-100">
           <div>
             <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
               Alta Hospitalar & Receituário
@@ -42,10 +42,10 @@ export const DischargeTab: React.FC<DischargeTabProps> = ({ bed, onShowToast }) 
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               onClick={copyToClipboard}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
+              className="flex-1 sm:flex-none px-4 py-2.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
             >
               <Copy className="w-3.5 h-3.5" />
               <span>Copiar Alta & Receituário</span>
@@ -53,7 +53,7 @@ export const DischargeTab: React.FC<DischargeTabProps> = ({ bed, onShowToast }) 
 
             <button
               onClick={() => window.print()}
-              className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-all text-xs cursor-pointer"
+              className="p-2.5 sm:p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-all text-xs cursor-pointer shrink-0"
               title="Imprimir Documentos de Alta"
             >
               <Printer className="w-4 h-4" />

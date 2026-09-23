@@ -31,14 +31,14 @@ export const BedSelector: React.FC<BedSelectorProps> = ({
   });
 
   return (
-    <div className="bg-slate-50 border-b border-slate-200/80 px-3 sm:px-6 py-2.5 space-y-2">
+    <div className="bg-slate-50 border-b border-slate-200/80 px-2.5 sm:px-6 py-2 space-y-1.5 sm:space-y-2">
       {/* Top Filter Bar: Sectors + Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
         {/* Sector Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
           <button
             onClick={() => setSelectedSector('all')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all ${
+            className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-[11px] sm:text-xs font-semibold shrink-0 transition-all cursor-pointer ${
               selectedSector === 'all'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
@@ -53,7 +53,7 @@ export const BedSelector: React.FC<BedSelectorProps> = ({
               <button
                 key={sec.key}
                 onClick={() => setSelectedSector(sec.key)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all ${
+                className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-[11px] sm:text-xs font-semibold shrink-0 transition-all cursor-pointer ${
                   isSelected
                     ? 'bg-teal-700 text-white shadow-xs'
                     : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
@@ -73,13 +73,13 @@ export const BedSelector: React.FC<BedSelectorProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar leito ou paciente..."
-            className="w-full text-xs pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-teal-500 transition-all"
+            className="w-full text-xs pl-8 pr-3 py-1 bg-white border border-slate-200 rounded-lg sm:rounded-xl focus:outline-none focus:border-teal-500 transition-all"
           />
         </div>
       </div>
 
       {/* Horizontal Beds Carousel */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1">
+      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-0.5">
         {filteredBeds.map((bed) => {
           const isSelected = bed.id === activeBedId;
           const alerts = analyzeBedAlerts(bed);

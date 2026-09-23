@@ -26,7 +26,12 @@ export const ShiftSummaryTab: React.FC<ShiftSummaryTabProps> = ({
   onShowToast
 }) => {
   const [selectedSector, setSelectedSector] = useState<Sector | 'all'>('all');
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return 'cards';
+    }
+    return 'table';
+  });
 
   const filteredBeds = beds.filter((b) => {
     if (selectedSector !== 'all' && b.sector !== selectedSector) return false;
@@ -52,6 +57,15 @@ export const ShiftSummaryTab: React.FC<ShiftSummaryTabProps> = ({
         if (b.pendencias) lines.push(`  Pendências: ${b.pendencias}`);
         if (b.intercorrencias) lines.push(`  Obs: ${b.intercorrencias}`);
         if (b.avpSite) lines.push(`  AVP: ${b.avpSite} (${b.avpDate || ''})`);
+
+        const atestadoPac = b.data?.atestadoPaciente || b.atestadoPaciente;
+        const atestadoAcomp = b.data?.atestadoAcompanhante || b.atestadoAcompanhante;
+        const atestadoTags: string[] = [];
+        if (atestadoPac === 'sim') atestadoTags.push(`Paciente: Sim (${b.data?.atestadoPacienteDias || b.atestadoPacienteDias || 'Definir'})`);
+        else if (atestadoPac === 'licenca_maternidade') atestadoTags.push('Paciente: Licença Maternidade (120d)');
+        if (atestadoAcomp === 'sim') atestadoTags.push(`Acompanhante: Sim (${b.data?.atestadoAcompanhanteDias || b.atestadoAcompanhanteDias || 'Internação'})`);
+        if (atestadoTags.length > 0) lines.push(`  Atestados: ${atestadoTags.join(' | ')}`);
+
         lines.push(`----------------------------------------------------------------`);
       });
 
@@ -62,11 +76,11 @@ export const ShiftSummaryTab: React.FC<ShiftSummaryTabProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4">
       {/* Top Action Bar */}
-      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-teal-600" />
             <span>Passagem de Plantão - Maternidade</span>
           </h2>
@@ -75,12 +89,12 @@ export const ShiftSummaryTab: React.FC<ShiftSummaryTabProps> = ({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* Sector Filter */}
           <select
             value={selectedSector}
             onChange={(e) => setSelectedSector(e.target.value as Sector | 'all')}
-            className="text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 font-medium text-slate-700 focus:outline-none"
+            className="flex-1 sm:flex-none text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 font-medium text-slate-700 focus:outline-none cursor-pointer"
           >
             <option value="all">Todas as Enfermarias ({beds.length})</option>
             {SECTORS.map((s) => (
@@ -94,7 +108,7 @@ export const ShiftSummaryTab: React.FC<ShiftSummaryTabProps> = ({
           <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1">
             <button
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'table' ? 'bg-white shadow-xs text-slate-900' : 'text-slate-500'
               }`}
               title="Visualização em Tabela (Documento Oficial)"
@@ -103,7 +117,7 @@ export const ShiftSummaryTab: React.FC<ShiftSummaryTabProps> = ({
             </button>
             <button
               onClick={() => setViewMode('cards')}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'cards' ? 'bg-white shadow-xs text-slate-900' : 'text-slate-500'
               }`}
               title="Visualização em Cards Rápidos"
@@ -115,10 +129,10 @@ export const ShiftSummaryTab: React.FC<ShiftSummaryTabProps> = ({
           {/* Copy Button */}
           <button
             onClick={copyConsolidatedList}
-            className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+            className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer shrink-0"
           >
             <Copy className="w-3.5 h-3.5" />
-            <span>Copiar Resumo</span>
+            <span>Copiar</span>
           </button>
 
           {/* Print Button */}
@@ -253,7 +267,21 @@ export const ShiftSummaryTab: React.FC<ShiftSummaryTabProps> = ({
 
                       {/* Pendências */}
                       <td className="p-2.5 border border-slate-200 text-slate-700 font-medium">
-                        {bed.pendencias || (bed.isReviewed ? 'Nenhuma pendência' : 'Revisão do plantão')}
+                        <div>{bed.pendencias || (bed.isReviewed ? 'Nenhuma pendência' : 'Revisão do plantão')}</div>
+                        {((bed.data?.atestadoPaciente && bed.data.atestadoPaciente !== 'nao') || (bed.atestadoPaciente && bed.atestadoPaciente !== 'nao') || (bed.data?.atestadoAcompanhante === 'sim') || (bed.atestadoAcompanhante === 'sim')) && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {((bed.data?.atestadoPaciente && bed.data.atestadoPaciente !== 'nao') || (bed.atestadoPaciente && bed.atestadoPaciente !== 'nao')) && (
+                              <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
+                                📄 Atestado: {bed.data?.atestadoPaciente === 'licenca_maternidade' || bed.atestadoPaciente === 'licenca_maternidade' ? 'Licença (120d)' : 'Sim'}
+                              </span>
+                            )}
+                            {((bed.data?.atestadoAcompanhante === 'sim') || (bed.atestadoAcompanhante === 'sim')) && (
+                              <span className="text-[9px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                                👥 Acomp: Sim
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* AVP */}
@@ -346,6 +374,21 @@ export const ShiftSummaryTab: React.FC<ShiftSummaryTabProps> = ({
                 {bed.pendencias && (
                   <div className="text-[10px] text-amber-800 bg-amber-50/70 p-1.5 rounded-lg mb-2">
                     <strong>Pendência:</strong> {bed.pendencias}
+                  </div>
+                )}
+
+                {((bed.data?.atestadoPaciente && bed.data.atestadoPaciente !== 'nao') || (bed.atestadoPaciente && bed.atestadoPaciente !== 'nao') || (bed.data?.atestadoAcompanhante === 'sim') || (bed.atestadoAcompanhante === 'sim')) && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {((bed.data?.atestadoPaciente && bed.data.atestadoPaciente !== 'nao') || (bed.atestadoPaciente && bed.atestadoPaciente !== 'nao')) && (
+                      <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
+                        📄 Atestado: {bed.data?.atestadoPaciente === 'licenca_maternidade' || bed.atestadoPaciente === 'licenca_maternidade' ? 'Licença (120d)' : 'Sim'}
+                      </span>
+                    )}
+                    {((bed.data?.atestadoAcompanhante === 'sim') || (bed.atestadoAcompanhante === 'sim')) && (
+                      <span className="text-[9px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                        👥 Acomp: Sim
+                      </span>
+                    )}
                   </div>
                 )}
 

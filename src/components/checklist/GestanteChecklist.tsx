@@ -12,6 +12,7 @@ import { Chip } from '../common/Chip';
 import { SectionCard } from '../common/SectionCard';
 import { BloodPressureInput } from '../common/BloodPressureInput';
 import { ObstetricHistoryInput } from '../common/ObstetricHistoryInput';
+import { AtestadoChecklistSection } from './AtestadoChecklistSection';
 import { parseAndEvaluateBP, getBedBP } from '../../utils/bpAnalyzer';
 
 interface GestanteChecklistProps {
@@ -570,6 +571,14 @@ export const GestanteChecklist: React.FC<GestanteChecklistProps> = ({
             </div>
           </div>
         </SectionCard>
+
+        {/* Atestados e Declarações (Paciente & Acompanhante) */}
+        <AtestadoChecklistSection
+          data={d}
+          onUpdateField={(key, value) => updateField(key as keyof GestanteData, value)}
+          onUpdateBed={onUpdateBed}
+          patientType="gestante"
+        />
 
         {/* Action Button */}
         <button

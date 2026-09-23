@@ -23,6 +23,11 @@ export const createEmptyPuerpera = (): PuerperaData => ({
     tipagemMae: 'O+',
   },
   obstetricHistory: 'G01P00(n00 C 00)A00',
+  atestadoPaciente: 'nao',
+  atestadoPacienteDias: '',
+  atestadoAcompanhante: 'nao',
+  atestadoAcompanhanteNome: '',
+  atestadoAcompanhanteDias: '',
   customNotes: ''
 });
 
@@ -44,6 +49,11 @@ export const createEmptyGestante = (): GestanteData => ({
   vaginalExam: 'nao_realizado',
   painLevel: '1-3',
   obstetricHistory: 'G01P00(n00 C 00)A00',
+  atestadoPaciente: 'nao',
+  atestadoPacienteDias: '',
+  atestadoAcompanhante: 'nao',
+  atestadoAcompanhanteNome: '',
+  atestadoAcompanhanteDias: '',
   customNotes: ''
 });
 
@@ -56,6 +66,11 @@ export const createEmptyCuretagem = (): CuretagemData => ({
   bloodPressure: '120/80',
   painLevel: '1-3',
   obstetricHistory: 'G02P00(n00 C 00)A01',
+  atestadoPaciente: 'nao',
+  atestadoPacienteDias: '',
+  atestadoAcompanhante: 'nao',
+  atestadoAcompanhanteNome: '',
+  atestadoAcompanhanteDias: '',
   customNotes: ''
 });
 

@@ -5,6 +5,7 @@ import { Chip } from '../common/Chip';
 import { SectionCard } from '../common/SectionCard';
 import { BloodPressureInput } from '../common/BloodPressureInput';
 import { ObstetricHistoryInput } from '../common/ObstetricHistoryInput';
+import { AtestadoChecklistSection } from './AtestadoChecklistSection';
 import { getBedBP } from '../../utils/bpAnalyzer';
 
 interface CuretagemChecklistProps {
@@ -202,6 +203,14 @@ export const CuretagemChecklist: React.FC<CuretagemChecklistProps> = ({
             </div>
           </div>
         </SectionCard>
+
+        {/* Atestados e Declarações (Paciente & Acompanhante) */}
+        <AtestadoChecklistSection
+          data={d}
+          onUpdateField={(key, value) => updateField(key as keyof CuretagemData, value)}
+          onUpdateBed={onUpdateBed}
+          patientType="curetagem"
+        />
 
         <button
           onClick={onNavigateToPrescription}

@@ -98,96 +98,108 @@ export const ObstetricHistoryInput: React.FC<ObstetricHistoryInputProps> = ({
         />
       </div>
 
-      {/* Steppers: G, n, C, A */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-slate-200/60">
+      {/* Steppers: G, n, C, A in 4 compact columns */}
+      <div className="grid grid-cols-4 gap-1 sm:gap-2 pt-1 border-t border-slate-200/60">
         {/* Gestações */}
-        <div className="bg-white p-2 rounded-xl border border-slate-200 flex flex-col items-center">
-          <span className="text-[10px] font-bold text-slate-500 uppercase">G (Gestações)</span>
-          <div className="flex items-center gap-2 mt-1">
+        <div className="bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 flex flex-col items-center">
+          <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-tight truncate w-full text-center">
+            <span className="sm:hidden">G (Gest.)</span>
+            <span className="hidden sm:inline">G (Gestações)</span>
+          </span>
+          <div className="flex items-center gap-1 sm:gap-2 mt-1">
             <button
               type="button"
               onClick={() => updateNumbers(g - 1, n, c, a)}
               disabled={g <= 1}
-              className="p-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
+              className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
             >
-              <Minus className="w-3 h-3" />
+              <Minus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </button>
-            <span className="font-bold text-sm text-slate-800 w-6 text-center">{g}</span>
+            <span className="font-bold text-xs sm:text-sm text-slate-800 w-4 sm:w-6 text-center">{g}</span>
             <button
               type="button"
               onClick={() => updateNumbers(g + 1, n, c, a)}
-              className="p-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
+              className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </button>
           </div>
         </div>
 
         {/* Partos Normais (n) */}
-        <div className="bg-white p-2 rounded-xl border border-slate-200 flex flex-col items-center">
-          <span className="text-[10px] font-bold text-slate-500 uppercase">n (Normais)</span>
-          <div className="flex items-center gap-2 mt-1">
+        <div className="bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 flex flex-col items-center">
+          <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-tight truncate w-full text-center">
+            <span className="sm:hidden">n (Norm.)</span>
+            <span className="hidden sm:inline">n (Normais)</span>
+          </span>
+          <div className="flex items-center gap-1 sm:gap-2 mt-1">
             <button
               type="button"
               onClick={() => updateNumbers(g, n - 1, c, a)}
               disabled={n <= 0}
-              className="p-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
+              className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
             >
-              <Minus className="w-3 h-3" />
+              <Minus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </button>
-            <span className="font-bold text-sm text-slate-800 w-6 text-center">{n}</span>
+            <span className="font-bold text-xs sm:text-sm text-slate-800 w-4 sm:w-6 text-center">{n}</span>
             <button
               type="button"
               onClick={() => updateNumbers(Math.max(g, n + 1 + c), n + 1, c, a)}
-              className="p-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
+              className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </button>
           </div>
         </div>
 
         {/* Cesáreas (C) */}
-        <div className="bg-white p-2 rounded-xl border border-slate-200 flex flex-col items-center">
-          <span className="text-[10px] font-bold text-slate-500 uppercase">C (Cesáreas)</span>
-          <div className="flex items-center gap-2 mt-1">
+        <div className="bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 flex flex-col items-center">
+          <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-tight truncate w-full text-center">
+            <span className="sm:hidden">C (Ces.)</span>
+            <span className="hidden sm:inline">C (Cesáreas)</span>
+          </span>
+          <div className="flex items-center gap-1 sm:gap-2 mt-1">
             <button
               type="button"
               onClick={() => updateNumbers(g, n, c - 1, a)}
               disabled={c <= 0}
-              className="p-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
+              className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
             >
-              <Minus className="w-3 h-3" />
+              <Minus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </button>
-            <span className="font-bold text-sm text-slate-800 w-6 text-center">{c}</span>
+            <span className="font-bold text-xs sm:text-sm text-slate-800 w-4 sm:w-6 text-center">{c}</span>
             <button
               type="button"
               onClick={() => updateNumbers(Math.max(g, n + c + 1), n, c + 1, a)}
-              className="p-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
+              className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </button>
           </div>
         </div>
 
         {/* Abortos (A) */}
-        <div className="bg-white p-2 rounded-xl border border-slate-200 flex flex-col items-center">
-          <span className="text-[10px] font-bold text-slate-500 uppercase">A (Abortos)</span>
-          <div className="flex items-center gap-2 mt-1">
+        <div className="bg-white p-1.5 sm:p-2 rounded-xl border border-slate-200 flex flex-col items-center">
+          <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-tight truncate w-full text-center">
+            <span className="sm:hidden">A (Abort.)</span>
+            <span className="hidden sm:inline">A (Abortos)</span>
+          </span>
+          <div className="flex items-center gap-1 sm:gap-2 mt-1">
             <button
               type="button"
               onClick={() => updateNumbers(g, n, c, a - 1)}
               disabled={a <= 0}
-              className="p-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
+              className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
             >
-              <Minus className="w-3 h-3" />
+              <Minus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </button>
-            <span className="font-bold text-sm text-slate-800 w-6 text-center">{a}</span>
+            <span className="font-bold text-xs sm:text-sm text-slate-800 w-4 sm:w-6 text-center">{a}</span>
             <button
               type="button"
               onClick={() => updateNumbers(Math.max(g, n + c + a + 1), n, c, a + 1)}
-              className="p-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
+              className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
             </button>
           </div>
         </div>
