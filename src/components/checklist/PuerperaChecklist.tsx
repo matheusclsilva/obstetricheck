@@ -17,6 +17,7 @@ import { SectionCard } from '../common/SectionCard';
 import { BloodPressureInput } from '../common/BloodPressureInput';
 import { ObstetricHistoryInput } from '../common/ObstetricHistoryInput';
 import { AtestadoChecklistSection } from './AtestadoChecklistSection';
+import { ClinicalHistoryChecklistSection } from './ClinicalHistoryChecklistSection';
 import { getBedBP } from '../../utils/bpAnalyzer';
 
 interface PuerperaChecklistProps {
@@ -212,6 +213,14 @@ export const PuerperaChecklist: React.FC<PuerperaChecklistProps> = ({
             showQuickChips={true}
           />
         </SectionCard>
+
+        {/* 1.2 Histórico Clínico, Alergias, Comorbidades, MUC & Queixas da Paciente */}
+        <ClinicalHistoryChecklistSection
+          data={d}
+          bed={bed}
+          onUpdateField={updateField}
+          onUpdateBed={onUpdateBed}
+        />
 
         {/* 2. Mamas e Amamentação */}
         <SectionCard title="Mamas e Lactação" icon={HeartPulse} color="text-rose-700" bg="bg-rose-100">

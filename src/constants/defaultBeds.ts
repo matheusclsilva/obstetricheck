@@ -28,6 +28,11 @@ export const createEmptyPuerpera = (): PuerperaData => ({
   atestadoAcompanhante: 'nao',
   atestadoAcompanhanteNome: '',
   atestadoAcompanhanteDias: '',
+  alergias: 'NEGA',
+  alergiaStatus: 'nao',
+  comorbidades: 'NEGA',
+  muc: 'NEGA',
+  queixasAdicionais: '',
   customNotes: ''
 });
 
@@ -54,6 +59,11 @@ export const createEmptyGestante = (): GestanteData => ({
   atestadoAcompanhante: 'nao',
   atestadoAcompanhanteNome: '',
   atestadoAcompanhanteDias: '',
+  alergias: 'NEGA',
+  alergiaStatus: 'nao',
+  comorbidades: 'NEGA',
+  muc: 'NEGA',
+  queixasAdicionais: '',
   customNotes: ''
 });
 
@@ -71,6 +81,11 @@ export const createEmptyCuretagem = (): CuretagemData => ({
   atestadoAcompanhante: 'nao',
   atestadoAcompanhanteNome: '',
   atestadoAcompanhanteDias: '',
+  alergias: 'NEGA',
+  alergiaStatus: 'nao',
+  comorbidades: 'NEGA',
+  muc: 'NEGA',
+  queixasAdicionais: '',
   customNotes: ''
 });
 

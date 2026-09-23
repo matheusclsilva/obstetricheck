@@ -31,6 +31,21 @@ export const analyzeBedAlerts = (bed: Bed): ClinicalAlert[] => {
     });
   }
 
+  // --- ALERTA DE ALERGIA MEDICAMENTOSA (SEGURANÇA DO PACIENTE) ---
+  const rawAlergias = bed.alergias || (bed.data && bed.data.alergias);
+  if (
+    rawAlergias &&
+    !rawAlergias.toUpperCase().includes('NEGA') &&
+    !rawAlergias.toUpperCase().includes('NÃO REFERE')
+  ) {
+    alerts.push({
+      severity: 'high',
+      title: `ALERTA DE ALERGIA: ${rawAlergias.toUpperCase()}`,
+      desc: `Paciente com alergia medicamentosa a: ${rawAlergias}. CUIDADO na prescrição e administração de medicamentos!`,
+      actionRequired: `Não prescrever ${rawAlergias}`
+    });
+  }
+
   // --- PUÉRPERA ---
   if (bed.type === 'puerpera') {
     const d = bed.data;

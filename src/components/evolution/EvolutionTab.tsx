@@ -282,6 +282,20 @@ export const EvolutionTab: React.FC<EvolutionTabProps> = ({
                 </div>
               </div>
 
+              {/* Queixas Adicionais da Paciente (Span 2) */}
+              <div className="md:col-span-2">
+                <label className="text-[11px] font-bold text-slate-600 uppercase block mb-1">
+                  Queixas Adicionais da Paciente (Alimenta o campo EVOLUÇÃO):
+                </label>
+                <input
+                  type="text"
+                  value={bed.queixasAdicionais ?? ''}
+                  onChange={(e) => updateField('queixasAdicionais', e.target.value)}
+                  placeholder="Ex: Refere cefaleia holocraniana leve após deambulação; relata dor lombar persistente..."
+                  className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-purple-500 font-semibold"
+                />
+              </div>
+
               {/* História Obstétrica / Paridade (Span 2) */}
               <div className="md:col-span-2">
                 <ObstetricHistoryInput

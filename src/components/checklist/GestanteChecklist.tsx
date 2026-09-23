@@ -13,6 +13,7 @@ import { SectionCard } from '../common/SectionCard';
 import { BloodPressureInput } from '../common/BloodPressureInput';
 import { ObstetricHistoryInput } from '../common/ObstetricHistoryInput';
 import { AtestadoChecklistSection } from './AtestadoChecklistSection';
+import { ClinicalHistoryChecklistSection } from './ClinicalHistoryChecklistSection';
 import { parseAndEvaluateBP, getBedBP } from '../../utils/bpAnalyzer';
 
 interface GestanteChecklistProps {
@@ -339,6 +340,14 @@ export const GestanteChecklist: React.FC<GestanteChecklistProps> = ({
             </div>
           </div>
         </SectionCard>
+
+        {/* 1.1 Histórico Clínico, Alergias, Comorbidades, MUC & Queixas da Paciente */}
+        <ClinicalHistoryChecklistSection
+          data={d}
+          bed={bed}
+          onUpdateField={updateField}
+          onUpdateBed={onUpdateBed}
+        />
 
         {/* 2. Exame Físico Obstétrico (>20 semanas - evolucao.txt) */}
         <SectionCard title="Exame Físico Obstétrico (>20 Semanas)" icon={Activity} color="text-teal-700" bg="bg-teal-100">

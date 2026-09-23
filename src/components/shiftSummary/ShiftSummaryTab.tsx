@@ -58,6 +58,23 @@ export const ShiftSummaryTab: React.FC<ShiftSummaryTabProps> = ({
         if (b.intercorrencias) lines.push(`  Obs: ${b.intercorrencias}`);
         if (b.avpSite) lines.push(`  AVP: ${b.avpSite} (${b.avpDate || ''})`);
 
+        const rawAllergy = b.alergias || b.data?.alergias;
+        if (rawAllergy && !rawAllergy.toUpperCase().includes('NEGA') && !rawAllergy.toUpperCase().includes('NÃO REFERE')) {
+          lines.push(`  ⚠️ ALERGIA: ${rawAllergy.toUpperCase()}`);
+        }
+        const rawComorb = b.comorbidades || b.data?.comorbidades;
+        if (rawComorb && !rawComorb.toUpperCase().includes('NEGA')) {
+          lines.push(`  Comorbidades: ${rawComorb}`);
+        }
+        const rawMuc = b.muc || b.data?.muc;
+        if (rawMuc && !rawMuc.toUpperCase().includes('NEGA')) {
+          lines.push(`  MUC: ${rawMuc}`);
+        }
+        const rawQueixas = b.queixasAdicionais || b.data?.queixasAdicionais;
+        if (rawQueixas && !rawQueixas.toUpperCase().includes('NEGA QUEIXAS')) {
+          lines.push(`  Queixas: ${rawQueixas}`);
+        }
+
         const atestadoPac = b.data?.atestadoPaciente || b.atestadoPaciente;
         const atestadoAcomp = b.data?.atestadoAcompanhante || b.atestadoAcompanhante;
         const atestadoTags: string[] = [];
@@ -376,6 +393,20 @@ export const ShiftSummaryTab: React.FC<ShiftSummaryTabProps> = ({
                     <strong>Pendência:</strong> {bed.pendencias}
                   </div>
                 )}
+
+                {/* Alergia badge */}
+                {(() => {
+                  const rawAllergy = bed.alergias || bed.data?.alergias;
+                  if (rawAllergy && !rawAllergy.toUpperCase().includes('NEGA') && !rawAllergy.toUpperCase().includes('NÃO REFERE')) {
+                    return (
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-rose-800 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200 mb-2">
+                        <AlertTriangle className="w-3 h-3 text-rose-600 shrink-0" />
+                        <span className="truncate">Alergia: {rawAllergy}</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
 
                 {((bed.data?.atestadoPaciente && bed.data.atestadoPaciente !== 'nao') || (bed.atestadoPaciente && bed.atestadoPaciente !== 'nao') || (bed.data?.atestadoAcompanhante === 'sim') || (bed.atestadoAcompanhante === 'sim')) && (
                   <div className="flex flex-wrap gap-1 mb-2">

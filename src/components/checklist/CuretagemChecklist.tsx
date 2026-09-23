@@ -6,6 +6,7 @@ import { SectionCard } from '../common/SectionCard';
 import { BloodPressureInput } from '../common/BloodPressureInput';
 import { ObstetricHistoryInput } from '../common/ObstetricHistoryInput';
 import { AtestadoChecklistSection } from './AtestadoChecklistSection';
+import { ClinicalHistoryChecklistSection } from './ClinicalHistoryChecklistSection';
 import { getBedBP } from '../../utils/bpAnalyzer';
 
 interface CuretagemChecklistProps {
@@ -154,6 +155,14 @@ export const CuretagemChecklist: React.FC<CuretagemChecklistProps> = ({
             </div>
           </div>
         </SectionCard>
+
+        {/* Histórico Clínico, Alergias, Comorbidades, MUC & Queixas da Paciente */}
+        <ClinicalHistoryChecklistSection
+          data={d}
+          bed={bed}
+          onUpdateField={updateField}
+          onUpdateBed={onUpdateBed}
+        />
       </div>
 
       <div className="lg:col-span-4 space-y-3">

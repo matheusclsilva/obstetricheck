@@ -38,6 +38,11 @@ export interface PuerperaData {
   atestadoAcompanhante?: 'nao' | 'sim';
   atestadoAcompanhanteNome?: string;
   atestadoAcompanhanteDias?: string;
+  alergias?: string;
+  alergiaStatus?: 'nao' | 'sim';
+  comorbidades?: string;
+  muc?: string;
+  queixasAdicionais?: string;
   customNotes: string;
 }
 
@@ -64,6 +69,11 @@ export interface GestanteData {
   atestadoAcompanhante?: 'nao' | 'sim';
   atestadoAcompanhanteNome?: string;
   atestadoAcompanhanteDias?: string;
+  alergias?: string;
+  alergiaStatus?: 'nao' | 'sim';
+  comorbidades?: string;
+  muc?: string;
+  queixasAdicionais?: string;
   customNotes: string;
 }
 
@@ -82,6 +92,11 @@ export interface CuretagemData {
   atestadoAcompanhante?: 'nao' | 'sim';
   atestadoAcompanhanteNome?: string;
   atestadoAcompanhanteDias?: string;
+  alergias?: string;
+  alergiaStatus?: 'nao' | 'sim';
+  comorbidades?: string;
+  muc?: string;
+  queixasAdicionais?: string;
   customNotes: string;
 }
 
@@ -122,6 +137,8 @@ export interface Bed {
   comorbidades?: string;
   muc?: string;
   alergias?: string;
+  alergiaStatus?: 'nao' | 'sim';
+  queixasAdicionais?: string;
   internmentDays?: number;
   examesLabText?: string;
   hdText?: string;

@@ -39,6 +39,12 @@ export const BedInfoCard: React.FC<BedInfoCardProps> = ({
 }) => {
   const currentBP = getBedBP(activeBed);
   const bpEval = parseAndEvaluateBP(currentBP);
+  const allergyVal = activeBed.alergias || activeBed.data?.alergias;
+  const hasAllergy = Boolean(
+    allergyVal &&
+    !allergyVal.toUpperCase().includes('NEGA') &&
+    !allergyVal.toUpperCase().includes('NÃO REFERE')
+  );
 
   return (
     <div className="bg-white border-b border-slate-200 px-2.5 sm:px-6 py-2.5 sm:py-3 shadow-2xs">
@@ -144,6 +150,17 @@ export const BedInfoCard: React.FC<BedInfoCardProps> = ({
                     </span>
                   )}
                 </div>
+
+                {/* Alerta de Alergia Medicamentosa */}
+                {hasAllergy && (
+                  <div
+                    className="flex items-center gap-1 bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 rounded-lg text-[11px] sm:text-xs font-bold shrink-0 animate-pulse"
+                    title={`ALERTA DE SEGURANÇA: Alergia a ${allergyVal}`}
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <span className="truncate max-w-[120px] sm:max-w-[180px]">Alergia: {allergyVal}</span>
+                  </div>
+                )}
 
                 {/* Adm */}
                 <div className="flex items-center gap-1 shrink-0">

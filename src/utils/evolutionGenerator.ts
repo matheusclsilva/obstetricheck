@@ -107,16 +107,17 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
   const hdaText = `${prefixoFixo} ${body}`.trim();
 
   // 2. COMORBIDADES
-  const comorbidadesText = bed.comorbidades || 'NEGA';
+  const comorbidadesText = bed.comorbidades || d.comorbidades || 'NEGA';
 
   // 3. MUC
-  const mucText = bed.muc || 'NEGA';
+  const mucText = bed.muc || d.muc || 'NEGA';
 
   // 4. ALERGIA
   let alergiaLine = 'NEGA ALERGIA';
-  if (bed.alergias) {
-    const alUpper = bed.alergias.toUpperCase();
-    if (alUpper.includes('NEGA')) {
+  const rawAlergias = bed.alergias || d.alergias;
+  if (rawAlergias) {
+    const alUpper = rawAlergias.toUpperCase().trim();
+    if (alUpper.includes('NEGA') || alUpper.includes('NÃO REFERE') || alUpper === 'NÃO') {
       alergiaLine = 'NEGA ALERGIA';
     } else if (alUpper.startsWith('ALERGIA')) {
       alergiaLine = alUpper;
@@ -154,6 +155,16 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
     evolucaoText = `PACIENTE EM ${internment}° DIA DE INTERNAÇÃO DE LEITO DE ENFERMARIA EM POI DE CURETAGEM UTERINA. ACEITANDO BEM A DIETA, DEAMBULANDO SEM AUXILIO, DIURESE E FLATOS PRESENTE E EVACUAÇÕES. NEGA QUEIXAS NO MOMENTO`;
   } else {
     evolucaoText = `PACIENTE EM ${internment}° DIA DE INTERNAÇÃO DE LEITO DE ENFERMARIA. ACEITANDO BEM A DIETA, DEAMBULANDO SEM AUXILIO, DIURESE E FLATOS PRESENTE. NEGA QUEIXAS NO MOMENTO`;
+  }
+
+  // Se houver queixas adicionais escritas registradas pela equipe:
+  const rawQueixasAdicionais = bed.queixasAdicionais || d.queixasAdicionais;
+  if (
+    rawQueixasAdicionais &&
+    rawQueixasAdicionais.trim() &&
+    !rawQueixasAdicionais.toUpperCase().includes('NEGA QUEIXAS')
+  ) {
+    evolucaoText += ` QUEIXAS ADICIONAIS: ${rawQueixasAdicionais.trim().toUpperCase()}.`;
   }
 
   // 6. EXAME FÍSICO
