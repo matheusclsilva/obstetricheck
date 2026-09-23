@@ -144,3 +144,53 @@ export const seedBedsToSupabase = async (beds: Bed[]): Promise<boolean> => {
     return false;
   }
 };
+
+/**
+ * Remove um leito do Supabase pelo ID.
+ */
+export const deleteBedFromSupabase = async (bedId: number): Promise<boolean> => {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('beds').delete().eq('id', bedId);
+    if (error) {
+      console.warn('Erro ao remover leito do Supabase:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Falha ao deletar leito no Supabase:', err);
+    return false;
+  }
+};
+
+/**
+ * Inscreve-se nas alterações em tempo real da tabela de leitos do Supabase.
+ */
+export const subscribeToBeds = (
+  onBedChange: (bed: Bed) => void,
+  onBedDelete?: (id: number) => void
+) => {
+  if (!supabase) return () => {};
+
+  const channel = supabase
+    .channel('realtime:beds')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'beds' },
+      (payload) => {
+        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+          if (payload.new && (payload.new as any).id) {
+            const bed = dbRowToBed(payload.new);
+            onBedChange(bed);
+          }
+        } else if (payload.eventType === 'DELETE' && onBedDelete && payload.old) {
+          onBedDelete(Number((payload.old as any).id));
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+};

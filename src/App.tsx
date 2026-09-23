@@ -22,6 +22,14 @@ import {
   createEmptyCuretagem,
   INITIAL_BEDS
 } from './constants/defaultBeds';
+import {
+  isSupabaseConfigured,
+  fetchBedsFromSupabase,
+  saveBedToSupabase,
+  seedBedsToSupabase,
+  deleteBedFromSupabase,
+  subscribeToBeds
+} from './services/supabase';
 
 export default function App() {
   const [beds, setBeds] = useState<Bed[]>(() => loadBedsFromStorage());
@@ -29,8 +37,55 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>('checklist'); // 'checklist', 'prescription', 'evolution', 'discharge', 'shift_summary'
   const [isBedManagerOpen, setIsBedManagerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isCloudActive, setIsCloudActive] = useState<boolean>(() => isSupabaseConfigured());
 
-  // Synchronize to LocalStorage
+  // Sincronização inicial e Realtime com o Supabase
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
+    let isMounted = true;
+    fetchBedsFromSupabase()
+      .then(async (remoteBeds) => {
+        if (!isMounted) return;
+        if (remoteBeds && remoteBeds.length > 0) {
+          setBeds(remoteBeds);
+          setIsCloudActive(true);
+        } else {
+          // Se o banco remoto ainda estiver vazio, inicializa com os leitos padrão
+          await seedBedsToSupabase(beds);
+          setIsCloudActive(true);
+        }
+      })
+      .catch((err) => {
+        console.warn('Erro ao conectar com Supabase:', err);
+        setIsCloudActive(false);
+      });
+
+    // Inscrição Realtime (alterações feitas em outro dispositivo chegam instantaneamente)
+    const unsubscribe = subscribeToBeds(
+      (incomingBed) => {
+        setBeds((prev) => {
+          const index = prev.findIndex((b) => b.id === incomingBed.id);
+          if (index >= 0) {
+            const next = [...prev];
+            next[index] = incomingBed;
+            return next;
+          }
+          return [...prev, incomingBed];
+        });
+      },
+      (deletedId) => {
+        setBeds((prev) => prev.filter((b) => b.id !== deletedId));
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  // Sincronização em Cache Local (LocalStorage)
   useEffect(() => {
     saveBedsToStorage(beds);
   }, [beds]);
@@ -82,7 +137,12 @@ export default function App() {
   // Bed updates
   const handleUpdateBed = (updates: Partial<Bed>) => {
     setBeds((prev) =>
-      prev.map((b) => (b.id === activeBedId ? { ...b, ...updates } : b))
+      prev.map((b) => {
+        if (b.id !== activeBedId) return b;
+        const updated = { ...b, ...updates };
+        saveBedToSupabase(updated);
+        return updated;
+      })
     );
   };
 
@@ -107,12 +167,14 @@ export default function App() {
           nextObst = updatedData.obstetricHistory;
         }
 
-        return {
+        const updatedBed = {
           ...b,
           bloodPressure: nextBP,
           obstetricHistory: nextObst,
           data: updatedData
         };
+        saveBedToSupabase(updatedBed);
+        return updatedBed;
       })
     );
   };
@@ -138,7 +200,7 @@ export default function App() {
           diagnosis = 'Leito disponível';
         }
 
-        return {
+        const updated = {
           ...b,
           type,
           data: newData,
@@ -150,6 +212,8 @@ export default function App() {
               ? `Paciente ${b.label}`
               : b.patientName
         };
+        saveBedToSupabase(updated);
+        return updated;
       })
     );
     showToast(`Leito ${activeBed.label} alterado para ${type.toUpperCase()}`);
@@ -165,7 +229,9 @@ export default function App() {
             ? `${b.label} marcado como REVISADO`
             : `${b.label} marcado como PENDENTE`
         );
-        return { ...b, isReviewed: newStatus };
+        const updated = { ...b, isReviewed: newStatus };
+        saveBedToSupabase(updated);
+        return updated;
       })
     );
   };
@@ -174,7 +240,7 @@ export default function App() {
     setBeds((prev) =>
       prev.map((b) => {
         if (b.id !== bedId) return b;
-        return {
+        const cleared: Bed = {
           ...b,
           patientName: 'Vago',
           age: '',
@@ -189,6 +255,8 @@ export default function App() {
           intercorrencias: '',
           data: createEmptyPuerpera()
         };
+        saveBedToSupabase(cleared);
+        return cleared;
       })
     );
     showToast(`Alta registrada para o leito ${activeBed.label}.`);
@@ -218,6 +286,7 @@ export default function App() {
 
     setBeds((prev) => [...prev, bed]);
     setActiveBedId(nextId);
+    saveBedToSupabase(bed);
     showToast(`Novo leito ${bed.label} adicionado com sucesso!`);
   };
 
@@ -227,6 +296,7 @@ export default function App() {
       return;
     }
     setBeds((prev) => prev.filter((b) => b.id !== bedId));
+    deleteBedFromSupabase(bedId);
     if (activeBedId === bedId) {
       const remaining = beds.filter((b) => b.id !== bedId);
       setActiveBedId(remaining[0]?.id || 1);
@@ -237,6 +307,7 @@ export default function App() {
   const handleResetBeds = () => {
     setBeds(INITIAL_BEDS);
     setActiveBedId(INITIAL_BEDS[0].id);
+    seedBedsToSupabase(INITIAL_BEDS);
     showToast('Leitos restaurados para o padrão oficial da maternidade (26 leitos).');
   };
 
@@ -261,6 +332,7 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenBedManager={() => setIsBedManagerOpen(true)}
+        isCloudConnected={isCloudActive}
       />
 
       {/* Horizontal Beds Selector */}

@@ -5,7 +5,9 @@ import {
   Printer,
   Settings2,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Cloud,
+  CloudOff
 } from 'lucide-react';
 import { StatsSummary } from '../../types/clinical';
 
@@ -14,13 +16,15 @@ interface HeaderProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   onOpenBedManager: () => void;
+  isCloudConnected?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   stats,
   activeTab,
   setActiveTab,
-  onOpenBedManager
+  onOpenBedManager,
+  isCloudConnected = false
 }) => {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
@@ -36,6 +40,18 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline-block bg-teal-50 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-teal-200">
                 Posto Maternidade
               </span>
+              {isCloudConnected ? (
+                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-emerald-200" title="Sincronização em tempo real via Supabase ativa">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <Cloud className="w-3 h-3 text-emerald-600" />
+                  Nuvem
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 text-[10px] font-medium px-2 py-0.5 rounded-full border border-slate-200" title="Modo Local: Dados salvos no navegador">
+                  <CloudOff className="w-3 h-3 text-slate-400" />
+                  Local
+                </span>
+              )}
             </div>
             <p className="text-[11px] text-slate-500 hidden sm:block">
               Enfermaria Obstétrica • Passagem de Leito, Prescrição & Evolução
