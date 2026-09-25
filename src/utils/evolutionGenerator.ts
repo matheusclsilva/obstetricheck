@@ -29,6 +29,39 @@ export const extractHdaBody = (rawHda?: string, currentParidade?: string): strin
 };
 
 /**
+ * Dicionário de motivos de internação para exibição médica formal em maiúsculas na evolução.
+ * Evita que identificadores brutos como "ITU_PIELONEFRITE" sejam impressos no prontuário.
+ */
+export const formatAdmissionReason = (reason: string): string => {
+  if (!reason) return '';
+  const key = reason.toLowerCase().trim();
+  const map: Record<string, string> = {
+    itu: 'ITU (INFECÇÃO DO TRATO URINÁRIO)',
+    pielonefrite: 'PIELONEFRITE AGUDA',
+    itu_pielonefrite: 'ITU / PIELONEFRITE',
+    hipertensao: 'SÍNDROME HIPERTENSIVA GESTACIONAL',
+    preeclampsia: 'PRÉ-ECLÂMPSIA (PE)',
+    ameaca_tpp: 'AMEAÇA DE TRABALHO DE PARTO PREMATURO (TPP)',
+    tp_latente: 'TRABALHO DE PARTO EM FASE LATENTE',
+    tp_ativo: 'TRABALHO DE PARTO EM FASE ATIVA',
+    ruprema: 'RUPREMA (ROTURA PREMATURA DE MEMBRANAS)',
+    dmg: 'DIABETES MELLITUS GESTACIONAL (DMG)',
+    ameaca_aborto: 'AMEAÇA DE ABORTO',
+    hiperemese: 'HIPERÊMESE GRAVÍDICA',
+    sangramento_1tri: 'SANGRAMENTO DE 1º/2º TRIMESTRE',
+    dor_abdominal: 'DOR ABDOMINAL A ESCLARECER',
+    rcf: 'RESTRIÇÃO DE CRESCIMENTO FETAL (RCF)',
+    alteracao_liquido: 'ALTERAÇÃO DO LÍQUIDO AMNIÓTICO'
+  };
+  return map[key] || reason.replace(/_/g, ' ').toUpperCase();
+};
+
+export const formatAdmissionReasonsList = (reasons?: string[]): string => {
+  if (!reasons || reasons.length === 0) return '';
+  return reasons.map(formatAdmissionReason).filter(Boolean).join(', ');
+};
+
+/**
  * Gera o corpo clínico padrão da HDA (sem o prefixo "PACIENTE [PARIDADE]").
  */
 export const generateDefaultHdaBody = (bed: Bed): string => {
@@ -61,8 +94,11 @@ export const generateDefaultHdaBody = (bed: Bed): string => {
     const igStr = `${d.gestationalAge || 32} SEMANAS${d.gestationalDays ? ` E ${d.gestationalDays} DIAS` : ''}`;
     const dataEntrada = bed.admissionDate || new Date().toLocaleDateString('pt-BR');
     const horaEntrada = bed.admissionTime ? ` ÀS ${bed.admissionTime}` : '';
-    const motivo = d.admissionReason?.join(', ').toUpperCase() || bed.diagnosis?.toUpperCase() || 'QUADRO OBSTÉTRICO';
-    const queixas = d.imminenceSigns?.length ? ` REFERINDO ${d.imminenceSigns.join(' E ').toUpperCase()}` : '';
+    const motivosFormatados = formatAdmissionReasonsList(d.admissionReason);
+    const motivo = motivosFormatados || bed.diagnosis?.toUpperCase() || 'QUADRO OBSTÉTRICO';
+    const queixas = d.imminenceSigns?.length
+      ? ` REFERINDO ${d.imminenceSigns.map((s: string) => s === 'cefaleia' ? 'CEFALEIA' : s === 'escotomas' ? 'ESCOTOMAS CINTILANTES' : s === 'epigastralgia' ? 'EPIGASTRALGIA' : s.toUpperCase()).join(' E ')}`
+      : '';
 
     return `GESTANTE COM IG DE ${igStr} (${d.gestationalAgeMethod || 'ALEGADA'}), DEU ENTRADA AO SERVIÇO EM ${dataEntrada}${horaEntrada} POR ${motivo}${queixas}${bpPart}${sulfatadaPart}`;
   } else if (isCuretagem) {
@@ -221,7 +257,19 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
   }
 
   // 9. HD (HIPÓTESE DIAGNÓSTICA)
-  const hdText = bed.hdText || bed.diagnosis?.toUpperCase() || (isPuerpera ? 'PUERPÉRIO PÓS PARTO' : isGestante ? 'GESTAÇÃO TÓPICA' : 'ABORTO INCOMPLETO');
+  let defaultHd = 'GESTAÇÃO TÓPICA';
+  if (isPuerpera) {
+    defaultHd = 'PUERPÉRIO PÓS PARTO';
+  } else if (isCuretagem) {
+    defaultHd = 'ABORTO INCOMPLETO';
+  } else if (isGestante) {
+    const motivosHd = (d.admissionReason || []).map(formatAdmissionReason).filter(Boolean);
+    defaultHd = motivosHd.length > 0
+      ? `GESTAÇÃO TÓPICA + ${motivosHd.join(' + ')}`
+      : 'GESTAÇÃO TÓPICA';
+  }
+
+  const hdText = bed.hdText || bed.diagnosis?.toUpperCase() || defaultHd;
 
   // 10. CONDUTA
   const isVaginal = d.deliveryType === 'vaginal' || d.deliveryType === 'forceps';

@@ -181,6 +181,26 @@ export const analyzeBedAlerts = (bed: Bed): ClinicalAlert[] => {
         });
       }
     }
+
+    // Pielonefrite Aguda
+    if (d.admissionReason?.includes('pielonefrite') || d.admissionReason?.includes('itu_pielonefrite')) {
+      alerts.push({
+        severity: d.temperature === 'febril' ? 'critical' : 'high',
+        title: 'PIELONEFRITE AGUDA NA GESTAÇÃO',
+        desc: 'Infecção do trato urinário alto com risco de sepse, disfunção respiratória e TPP. Manter Ceftriaxona EV, hidratação vigorosa e curva térmica.',
+        actionRequired: 'Ceftriaxona EV'
+      });
+    }
+
+    // Pré-Eclâmpsia
+    if (d.admissionReason?.includes('preeclampsia')) {
+      alerts.push({
+        severity: d.bloodPressure === 'grave' ? 'critical' : 'high',
+        title: 'PRÉ-ECLÂMPSIA (PE)',
+        desc: 'Síndrome hipertensiva gestacional. Monitorar proteinúria, sinais de iminência (cefaleia/escotomas/epigastralgia) e protocolo Zuspan se PA grave.',
+        actionRequired: d.bloodPressure === 'grave' ? 'Zuspan' : 'Mapa PA'
+      });
+    }
   }
 
   // --- CURETAGEM ---

@@ -40,6 +40,20 @@ export const GestanteChecklist: React.FC<GestanteChecklistProps> = ({
     });
   };
 
+  const handleToggleAdmissionReason = (reasonKey: string) => {
+    onUpdateData((prev) => {
+      const arr = (prev.admissionReason as string[]) || [];
+      // Se for ITU ou Pielonefrite, remove a chave unificada antiga 'itu_pielonefrite' se presente
+      let cleaned = arr;
+      if (reasonKey === 'itu' || reasonKey === 'pielonefrite') {
+        cleaned = cleaned.filter((x) => x !== 'itu_pielonefrite');
+      }
+      const exists = cleaned.includes(reasonKey);
+      const nextArr = exists ? cleaned.filter((x) => x !== reasonKey) : [...cleaned, reasonKey];
+      return { ...prev, admissionReason: nextArr };
+    });
+  };
+
   const updateField = (key: keyof GestanteData, value: any) => {
     onUpdateData((prev) => ({ ...prev, [key]: value }));
   };
@@ -268,72 +282,87 @@ export const GestanteChecklist: React.FC<GestanteChecklistProps> = ({
                 <Chip
                   color="sky"
                   active={d.admissionReason?.includes('ameaca_aborto')}
-                  onClick={() => toggleArrayItem('admissionReason', 'ameaca_aborto')}
+                  onClick={() => handleToggleAdmissionReason('ameaca_aborto')}
                   label="Ameaça de Aborto (<20s)"
                   badge="Repouso"
                 />
                 <Chip
                   color="sky"
                   active={d.admissionReason?.includes('hiperemese')}
-                  onClick={() => toggleArrayItem('admissionReason', 'hiperemese')}
+                  onClick={() => handleToggleAdmissionReason('hiperemese')}
                   label="Hiperêmese Gravídica"
                 />
                 <Chip
                   color="sky"
                   active={d.admissionReason?.includes('sangramento_1tri')}
-                  onClick={() => toggleArrayItem('admissionReason', 'sangramento_1tri')}
+                  onClick={() => handleToggleAdmissionReason('sangramento_1tri')}
                   label="Sangramento 1º/2º Trimestre"
                   badge="STV"
                 />
                 <Chip
                   color="sky"
                   active={d.admissionReason?.includes('tp_latente')}
-                  onClick={() => toggleArrayItem('admissionReason', 'tp_latente')}
+                  onClick={() => handleToggleAdmissionReason('tp_latente')}
                   label="Trabalho de Parto Latente"
                 />
                 <Chip
                   color="sky"
                   active={d.admissionReason?.includes('tp_ativo')}
-                  onClick={() => toggleArrayItem('admissionReason', 'tp_ativo')}
+                  onClick={() => handleToggleAdmissionReason('tp_ativo')}
                   label="Trabalho de Parto Ativo"
                 />
                 <Chip
                   color="sky"
                   active={d.admissionReason?.includes('ruprema')}
-                  onClick={() => toggleArrayItem('admissionReason', 'ruprema')}
+                  onClick={() => handleToggleAdmissionReason('ruprema')}
                   label="RUPREMA (Bolsa Rota)"
                   badge="Latência"
                 />
                 <Chip
                   color="sky"
                   active={d.admissionReason?.includes('hipertensao')}
-                  onClick={() => toggleArrayItem('admissionReason', 'hipertensao')}
-                  label="Síndrome Hipertensiva / PE"
+                  onClick={() => handleToggleAdmissionReason('hipertensao')}
+                  label="Síndrome Hipertensiva / HAS"
                   badge="PA"
                 />
                 <Chip
                   color="sky"
+                  active={d.admissionReason?.includes('preeclampsia')}
+                  onClick={() => handleToggleAdmissionReason('preeclampsia')}
+                  label="Pré-Eclâmpsia (PE)"
+                  badge="Zuspan"
+                />
+                <Chip
+                  color="sky"
                   active={d.admissionReason?.includes('dmg')}
-                  onClick={() => toggleArrayItem('admissionReason', 'dmg')}
+                  onClick={() => handleToggleAdmissionReason('dmg')}
                   label="DMG (Diabetes Gestacional)"
                 />
                 <Chip
                   color="sky"
-                  active={d.admissionReason?.includes('itu_pielonefrite')}
-                  onClick={() => toggleArrayItem('admissionReason', 'itu_pielonefrite')}
-                  label="ITU / Pielonefrite"
+                  active={d.admissionReason?.includes('itu')}
+                  onClick={() => handleToggleAdmissionReason('itu')}
+                  label="ITU (Infecção Urinária)"
+                  badge="Baixa / Cistite"
+                />
+                <Chip
+                  color="sky"
+                  active={d.admissionReason?.includes('pielonefrite') || d.admissionReason?.includes('itu_pielonefrite')}
+                  onClick={() => handleToggleAdmissionReason('pielonefrite')}
+                  label="Pielonefrite Aguda"
+                  badge="Parenteral / EV"
                 />
                 <Chip
                   color="sky"
                   active={d.admissionReason?.includes('ameaca_tpp')}
-                  onClick={() => toggleArrayItem('admissionReason', 'ameaca_tpp')}
+                  onClick={() => handleToggleAdmissionReason('ameaca_tpp')}
                   label="Ameaça de TPP"
                   badge="Corticoide"
                 />
                 <Chip
                   color="sky"
                   active={d.admissionReason?.includes('dor_abdominal')}
-                  onClick={() => toggleArrayItem('admissionReason', 'dor_abdominal')}
+                  onClick={() => handleToggleAdmissionReason('dor_abdominal')}
                   label="Dor Abdominal a Esclarecer"
                 />
               </div>

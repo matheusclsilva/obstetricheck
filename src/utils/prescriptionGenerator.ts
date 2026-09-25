@@ -155,8 +155,10 @@ export const generatePrescriptionText = (bed: Bed): string => {
       lines.push(`     * Solicitar USG Obstétrica / Transvaginal urgente.`);
     }
 
-    if (d.admissionReason?.includes('itu_pielonefrite')) {
-      lines.push(`   - Ceftriaxona 1g EV 1x ao dia + Hidratação venosa generosa.`);
+    if (d.admissionReason?.includes('pielonefrite') || d.admissionReason?.includes('itu_pielonefrite')) {
+      lines.push(`   - [PIELONEFRITE AGUDA]: Ceftriaxona 1g EV 1x ao dia + Hidratação venosa generosa (SF 0,9% 1000ml a 1500ml/dia) + Curva térmica de 4/4h.`);
+    } else if (d.admissionReason?.includes('itu')) {
+      lines.push(`   - [ITU BAIXA / CISTITE]: Cefalexina 500mg VO de 6/6h por 7 a 10 dias (ou conforme antibiograma) + Hidratação oral abundante.`);
     }
 
     if (d.admissionReason?.includes('ruprema')) {

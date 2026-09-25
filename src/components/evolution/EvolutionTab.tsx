@@ -425,15 +425,15 @@ export const EvolutionTab: React.FC<EvolutionTabProps> = ({
                   <label className="text-[11px] font-bold text-slate-600 uppercase block">
                     HD (Hipótese Diagnóstica):
                   </label>
-                  <div className="flex gap-1">
-                    {['PEG PÓS PARTO + HELLP PARCIAL', 'PUERPÉRIO FISIOLÓGICO', 'GESTAÇÃO TÓPICA TPP'].map((hd) => (
+                  <div className="flex flex-wrap gap-1">
+                    {['PEG PÓS PARTO + HELLP PARCIAL', 'PUERPÉRIO FISIOLÓGICO', 'GESTAÇÃO TÓPICA TPP', 'PIELONEFRITE AGUDA', 'ITU NA GESTAÇÃO', 'PRÉ-ECLÂMPSIA (PE)'].map((hd) => (
                       <button
                         key={hd}
                         type="button"
                         onClick={() => updateField('hdText', hd)}
                         className="text-[9px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer"
                       >
-                        {hd.slice(0, 14)}...
+                        {hd.slice(0, 16)}...
                       </button>
                     ))}
                   </div>
