@@ -133,9 +133,10 @@ export const analyzeBedAlerts = (bed: Bed): ClinicalAlert[] => {
       });
     }
 
-    // Vitalidade Fetal
+    // Vitalidade Fetal (Ausculta e parâmetros aplicáveis se IG > 14 sem)
+    const ig = d.gestationalAge || 32;
     const fhr = d.fhrValue || 140;
-    if (fhr < 110 || fhr > 160 || d.fetalVitality === 'bcf_anormal') {
+    if (ig > 14 && (fhr < 110 || fhr > 160 || d.fetalVitality === 'bcf_anormal')) {
       alerts.push({
         severity: 'critical',
         title: 'VITALIDADE FETAL PREJUDICADA',

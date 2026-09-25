@@ -570,9 +570,20 @@ export const GestanteChecklist: React.FC<GestanteChecklistProps> = ({
         <SectionCard title="Vitalidade Fetal (BCF)" icon={HeartPulse} color="text-rose-600" bg="bg-rose-50">
           <div className="space-y-2.5">
             <div>
-              <label className="text-xs font-medium text-slate-600 block mb-1">
-                BCF (Normal: 110 a 160 bpm):
-              </label>
+              <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                <label className="text-xs font-medium text-slate-600">
+                  BCF (Normal: 110 a 160 bpm):
+                </label>
+                {(d.gestationalAge || 32) > 14 ? (
+                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    Ausculta de 6/6h indicada (&gt;14 sem)
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                    IG ≤ 14 sem: Avaliar por USG (Sem BCF no sonar)
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -580,10 +591,20 @@ export const GestanteChecklist: React.FC<GestanteChecklistProps> = ({
                   max="220"
                   value={d.fhrValue || 140}
                   onChange={(e) => updateField('fhrValue', parseInt(e.target.value) || 140)}
-                  className="w-24 text-center font-bold text-base px-2 py-1.5 border border-slate-300 rounded-xl focus:border-teal-500 focus:outline-none"
+                  disabled={(d.gestationalAge || 32) <= 14}
+                  className={`w-24 text-center font-bold text-base px-2 py-1.5 border rounded-xl focus:outline-none ${
+                    (d.gestationalAge || 32) <= 14
+                      ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                      : 'bg-white border-slate-300 focus:border-teal-500'
+                  }`}
                 />
                 <span className="text-xs text-slate-500 font-medium">bpm</span>
               </div>
+              {(d.gestationalAge || 32) <= 14 && (
+                <p className="text-[10px] text-amber-700 mt-1.5 font-medium leading-relaxed bg-amber-50/60 p-2 rounded-lg border border-amber-200/80">
+                  * Gestação com ≤ 14 semanas. A escuta periódica de 6/6h no sonar Doppler é suprimida da prescrição e evolução.
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">

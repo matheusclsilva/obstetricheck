@@ -172,9 +172,14 @@ export const generatePrescriptionText = (bed: Bed): string => {
 
     // 5. CUIDADOS DE ENFERMAGEM
     lines.push(`\n5. CUIDADOS DE ENFERMAGEM & VIGILÂNCIA:`);
-    lines.push(`   - Ausculta intermitente de BCF com sonar Doppler a cada 4 horas (valor normal: 110-160 bpm).`);
+    const ig = d.gestationalAge || 32;
+    if (ig > 14) {
+      lines.push(`   - Ausculta de BCF com sonar Doppler de 6/6h (valor normal: 110-160 bpm).`);
+    }
     lines.push(`   - Controle de PA de 4/4h (ou de 1/1h se em uso de Sulfato de Magnésio).`);
-    lines.push(`   - Cardiotocografia (CTG) basal diária.`);
+    if (ig >= 28) {
+      lines.push(`   - Cardiotocografia (CTG) basal diária.`);
+    }
     lines.push(`   - Observar dinâmica uterina e perdas vaginais.`);
   }
 

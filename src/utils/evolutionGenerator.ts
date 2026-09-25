@@ -217,15 +217,20 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
 
     exameFisicoText = `BEG, CORADA, AFEBRIL, CONSCIENTE, ORIENTADA, EUPNEICA, ${mamasStr}, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, ÚTERO CONTRAÍDO ABAIXO DA CICATRIZ UMBILICAL, ${foStr}, ${loquiosStr}, MMII SEM EDEMAS.`;
   } else if (isGestante) {
-    if ((d.gestationalAge || 32) >= 20) {
+    const ig = d.gestationalAge || 32;
+    const bcfTexto = ig > 14
+      ? `BCF: ${d.fhrValue || 140} BPM`
+      : 'BCF INAUDÍVEL AO SONAR DEVIDO IG (≤ 14 SEM)';
+
+    if (ig >= 20) {
       const dinamicaStr = d.dynamics === 'ativo' ? 'PRESENTE' : d.dynamics === 'irregular' ? 'IRREGULAR' : 'AUSENTE';
       const perdasStr = d.vaginalLosses === 'sangramento' ? 'COM SANGRAMENTO VAGINAL ATIVO' : d.vaginalLosses === 'liquido_claro' ? 'LÍQUIDO CLARO' : 'AUSENTES';
       const edemasStr = d.edema === 'ausente' || !d.edema ? 'SEM EDEMAS' : `COM EDEMA ${d.edema}`;
 
-      exameFisicoText = `BEG, CORADA, AFEBRIL, CONSCIENTE, ORIENTADA, EUPNEICA, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, DINÂMICA UTERINA ${dinamicaStr}, TÔNUS UTERINO NORMAL, BCF: ${d.fhrValue || 140} BPM, TOQUE VAGINAL NÃO REALIZADO, MMII ${edemasStr}, PERDAS VAGINAIS ${perdasStr}.`;
+      exameFisicoText = `BEG, CORADA, AFEBRIL, CONSCIENTE, ORIENTADA, EUPNEICA, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, DINÂMICA UTERINA ${dinamicaStr}, TÔNUS UTERINO NORMAL, ${bcfTexto}, TOQUE VAGINAL NÃO REALIZADO, MMII ${edemasStr}, PERDAS VAGINAIS ${perdasStr}.`;
     } else {
       const perdasStr = d.vaginalLosses === 'sangramento' ? 'SANGRAMENTO VAGINAL ATIVO' : 'AUSENTES';
-      exameFisicoText = `BEG, CORADA, AFEBRIL, CONSCIENTE, ORIENTADA, EUPNEICA, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, DINÂMICA UTERINA AUSENTE, TÔNUS NORMAL, BCF: ${d.fhrValue || 140} BPM, FORRO VAGINAL COM SANGRAMENTO ${perdasStr}, MMII SEM EDEMAS.`;
+      exameFisicoText = `BEG, CORADA, AFEBRIL, CONSCIENTE, ORIENTADA, EUPNEICA, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, DINÂMICA UTERINA AUSENTE, TÔNUS NORMAL, ${bcfTexto}, FORRO VAGINAL COM SANGRAMENTO ${perdasStr}, MMII SEM EDEMAS.`;
     }
   } else if (isCuretagem) {
     const sangrStr = d.bleeding === 'ausente' ? 'AUSENTE' : d.bleeding?.toUpperCase() || 'LEVE';
@@ -287,7 +292,9 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
       const altaLinha = isEligibleForDischarge ? 'ALTA HOSPITALAR COM ORIENTAÇÕES' : 'AVALIAR ALTA';
       condutaText = `SUPORTE CLÍNICO\nPRESCRIÇÃO ORAL\nOBSERVAR SANGRAMENTO VAGINAL\n${altaLinha}`;
     } else if (isGestante) {
-      condutaText = `SUPORTE CLÍNICO\nCONTROLE DE SSVV E BCF DE 4/4H\nSOLICITO LAB\nAVALIAR EVOLUÇÃO CLÍNICA`;
+      const ig = d.gestationalAge || 32;
+      const bcfLinha = ig > 14 ? ' E BCF DE 6/6H' : ' DE 6/6H';
+      condutaText = `SUPORTE CLÍNICO\nCONTROLE DE SSVV${bcfLinha}\nSOLICITO LAB\nAVALIAR EVOLUÇÃO CLÍNICA`;
     } else {
       condutaText = `SUPORTE CLÍNICO\nOBSERVAR FORRO VAGINAL\nALTA HOSPITALAR COM ORIENTAÇÕES`;
     }
