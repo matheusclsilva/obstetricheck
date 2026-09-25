@@ -81,6 +81,14 @@ export const generateDefaultHdaBody = (bed: Bed): string => {
     ? '. SENDO SULFATADA.'
     : '.';
 
+  const rawHdaDetails = (bed.hdaDetails || d.hdaDetails || '').trim();
+  let detailsPart = '';
+  if (rawHdaDetails) {
+    const clean = rawHdaDetails.trim().replace(/\.+$/, '');
+    const isPrefixed = /^(PACIENTE|QUADRO|HIST[OÓ]RIA|REFERE|RELATA|INICIOU|APRESENTA|NEGA)/i.test(clean);
+    detailsPart = isPrefixed ? ` ${clean.toUpperCase()}.` : ` HISTÓRIA CLÍNICA: ${clean.toUpperCase()}.`;
+  }
+
   if (isPuerpera) {
     const isCesarea = d.deliveryType?.includes('cesarea');
     const partoTipo = isCesarea ? 'CESÁRIA' : 'PARTO NORMAL';
@@ -89,7 +97,7 @@ export const generateDefaultHdaBody = (bed: Bed): string => {
     const horaEntrada = bed.admissionTime ? ` ÀS ${bed.admissionTime}` : '';
     const queixas = bed.intercorrencias ? `, A ${bed.intercorrencias.toUpperCase()}` : '';
 
-    return `EM ${dataParto} DE PÓS ${partoTipo}, DEU ENTRADA AO SERVIÇO EM ${dataEntrada}${horaEntrada}${queixas}${bpPart}${sulfatadaPart}`;
+    return `EM ${dataParto} DE PÓS ${partoTipo}, DEU ENTRADA AO SERVIÇO EM ${dataEntrada}${horaEntrada}${queixas}${bpPart}${sulfatadaPart}${detailsPart}`;
   } else if (isGestante) {
     const igStr = `${d.gestationalAge || 32} SEMANAS${d.gestationalDays ? ` E ${d.gestationalDays} DIAS` : ''}`;
     const dataEntrada = bed.admissionDate || new Date().toLocaleDateString('pt-BR');
@@ -100,13 +108,13 @@ export const generateDefaultHdaBody = (bed: Bed): string => {
       ? ` REFERINDO ${d.imminenceSigns.map((s: string) => s === 'cefaleia' ? 'CEFALEIA' : s === 'escotomas' ? 'ESCOTOMAS CINTILANTES' : s === 'epigastralgia' ? 'EPIGASTRALGIA' : s.toUpperCase()).join(' E ')}`
       : '';
 
-    return `GESTANTE COM IG DE ${igStr} (${d.gestationalAgeMethod || 'ALEGADA'}), DEU ENTRADA AO SERVIÇO EM ${dataEntrada}${horaEntrada} POR ${motivo}${queixas}${bpPart}${sulfatadaPart}`;
+    return `GESTANTE COM IG DE ${igStr} (${d.gestationalAgeMethod || 'ALEGADA'}), DEU ENTRADA AO SERVIÇO EM ${dataEntrada}${horaEntrada} POR ${motivo}${queixas}${bpPart}${sulfatadaPart}${detailsPart}`;
   } else if (isCuretagem) {
     const dataEntrada = bed.admissionDate || new Date().toLocaleDateString('pt-BR');
     const horaEntrada = bed.admissionTime ? ` ÀS ${bed.admissionTime}` : '';
-    return `ADMITIDA EM ${dataEntrada}${horaEntrada} DEVIDO QUADRO DE ABORTAMENTO INCOMPLETO. SUBMETIDA A CURETAGEM UTERINA SOB RAQUIANESTESIA.`;
+    return `ADMITIDA EM ${dataEntrada}${horaEntrada} DEVIDO QUADRO DE ABORTAMENTO INCOMPLETO. SUBMETIDA A CURETAGEM UTERINA SOB RAQUIANESTESIA.${detailsPart}`;
   } else {
-    return `INTERNADA NO LEITO ${bed.label} EM ${bed.admissionDate || 'DATA NÃO INFORMADA'}.`;
+    return `INTERNADA NO LEITO ${bed.label} EM ${bed.admissionDate || 'DATA NÃO INFORMADA'}.${detailsPart}`;
   }
 };
 
@@ -135,9 +143,19 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
   const paridade = bed.obstetricHistory || d.obstetricHistory || 'G01P00(n00 C 00)A00';
   const prefixoFixo = `PACIENTE ${paridade}`;
 
+  const rawHdaDetails = (bed.hdaDetails || d.hdaDetails || '').trim();
+  let detailsPart = '';
+  if (rawHdaDetails) {
+    const clean = rawHdaDetails.trim().replace(/\.+$/, '');
+    const isPrefixed = /^(PACIENTE|QUADRO|HIST[OÓ]RIA|REFERE|RELATA|INICIOU|APRESENTA|NEGA)/i.test(clean);
+    detailsPart = isPrefixed ? ` ${clean.toUpperCase()}.` : ` HISTÓRIA CLÍNICA: ${clean.toUpperCase()}.`;
+  }
+
   let body = extractHdaBody(bed.hda, paridade);
   if (!body) {
     body = generateDefaultHdaBody(bed);
+  } else if (detailsPart && !body.toUpperCase().includes(rawHdaDetails.toUpperCase().slice(0, Math.min(20, rawHdaDetails.length)))) {
+    body = `${body.replace(/\.+$/, '')}.${detailsPart}`;
   }
 
   const hdaText = `${prefixoFixo} ${body}`.trim();

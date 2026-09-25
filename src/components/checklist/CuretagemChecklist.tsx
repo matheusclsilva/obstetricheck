@@ -7,6 +7,7 @@ import { BloodPressureInput } from '../common/BloodPressureInput';
 import { ObstetricHistoryInput } from '../common/ObstetricHistoryInput';
 import { AtestadoChecklistSection } from './AtestadoChecklistSection';
 import { ClinicalHistoryChecklistSection } from './ClinicalHistoryChecklistSection';
+import { HdaAnamneseChecklistSection } from './HdaAnamneseChecklistSection';
 import { getBedBP } from '../../utils/bpAnalyzer';
 
 interface CuretagemChecklistProps {
@@ -155,6 +156,14 @@ export const CuretagemChecklist: React.FC<CuretagemChecklistProps> = ({
             </div>
           </div>
         </SectionCard>
+
+        {/* História da Doença Atual (Anamnese Dirigida & HDA) */}
+        <HdaAnamneseChecklistSection
+          bed={bed}
+          data={d}
+          onUpdateField={updateField}
+          onUpdateBed={onUpdateBed}
+        />
 
         {/* Histórico Clínico, Alergias, Comorbidades, MUC & Queixas da Paciente */}
         <ClinicalHistoryChecklistSection

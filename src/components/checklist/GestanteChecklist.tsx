@@ -14,6 +14,7 @@ import { BloodPressureInput } from '../common/BloodPressureInput';
 import { ObstetricHistoryInput } from '../common/ObstetricHistoryInput';
 import { AtestadoChecklistSection } from './AtestadoChecklistSection';
 import { ClinicalHistoryChecklistSection } from './ClinicalHistoryChecklistSection';
+import { HdaAnamneseChecklistSection } from './HdaAnamneseChecklistSection';
 import { parseAndEvaluateBP, getBedBP } from '../../utils/bpAnalyzer';
 
 interface GestanteChecklistProps {
@@ -370,7 +371,15 @@ export const GestanteChecklist: React.FC<GestanteChecklistProps> = ({
           </div>
         </SectionCard>
 
-        {/* 1.1 Histórico Clínico, Alergias, Comorbidades, MUC & Queixas da Paciente */}
+        {/* 1.1 História da Doença Atual (Anamnese Dirigida & HDA) */}
+        <HdaAnamneseChecklistSection
+          bed={bed}
+          data={d}
+          onUpdateField={updateField}
+          onUpdateBed={onUpdateBed}
+        />
+
+        {/* 1.2 Histórico Clínico, Alergias, Comorbidades, MUC & Queixas da Paciente */}
         <ClinicalHistoryChecklistSection
           data={d}
           bed={bed}

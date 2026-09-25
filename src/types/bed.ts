@@ -43,6 +43,7 @@ export interface PuerperaData {
   comorbidades?: string;
   muc?: string;
   queixasAdicionais?: string;
+  hdaDetails?: string;
   customNotes: string;
 }
 
@@ -74,6 +75,7 @@ export interface GestanteData {
   comorbidades?: string;
   muc?: string;
   queixasAdicionais?: string;
+  hdaDetails?: string;
   customNotes: string;
 }
 
@@ -97,6 +99,7 @@ export interface CuretagemData {
   comorbidades?: string;
   muc?: string;
   queixasAdicionais?: string;
+  hdaDetails?: string;
   customNotes: string;
 }
 
@@ -134,6 +137,7 @@ export interface Bed {
   atestadoAcompanhanteDias?: string;
   // Campos da Evolução Médica (conforme modelo evolucao.txt)
   hda?: string;
+  hdaDetails?: string;
   comorbidades?: string;
   muc?: string;
   alergias?: string;

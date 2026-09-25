@@ -55,6 +55,7 @@ export const bedToDbRow = (bed: Bed) => ({
   rn: bed.rn,
   data: {
     ...(bed.data || {}),
+    hdaDetails: bed.hdaDetails || bed.data?.hdaDetails || '',
     _clientSessionId: CLIENT_SESSION_ID,
     _clientTimestamp: Date.now()
   }
@@ -81,6 +82,7 @@ export const dbRowToBed = (row: any): Bed => ({
   obstetricHistory: row.obstetric_history || '',
   bloodPressure: row.blood_pressure || '',
   hda: row.hda || '',
+  hdaDetails: row.hda_details || row.data?.hdaDetails || '',
   comorbidades: row.comorbidades || '',
   muc: row.muc || '',
   alergias: row.alergias || '',

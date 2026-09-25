@@ -368,6 +368,26 @@ export const EvolutionTab: React.FC<EvolutionTabProps> = ({
                   />
                 </div>
 
+                {/* Destaque da Anamnese Coletada no Checklist */}
+                {(bed.hdaDetails || bed.data?.hdaDetails) && (
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 bg-indigo-50/90 border border-indigo-200 px-2.5 py-1.5 rounded-xl text-[10px] text-indigo-950">
+                    <span className="truncate max-w-[85%]">
+                      <strong>Anamnese do Checklist:</strong> {bed.hdaDetails || bed.data?.hdaDetails}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const body = generateDefaultHdaBody(bed);
+                        updateField('hda', body);
+                        onShowToast('HDA atualizada com a anamnese do checklist!');
+                      }}
+                      className="font-bold text-indigo-700 hover:text-indigo-950 bg-white border border-indigo-200 px-2 py-0.5 rounded-md shrink-0 cursor-pointer shadow-2xs hover:bg-indigo-100/50"
+                    >
+                      Sincronizar
+                    </button>
+                  </div>
+                )}
+
                 {/* Quick Presets for HDA */}
                 <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                   <span className="text-[9px] text-slate-400 font-semibold uppercase">Modelos Rápidos:</span>

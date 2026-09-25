@@ -33,6 +33,7 @@ export const createEmptyPuerpera = (): PuerperaData => ({
   comorbidades: 'NEGA',
   muc: 'NEGA',
   queixasAdicionais: '',
+  hdaDetails: '',
   customNotes: ''
 });
 
@@ -64,6 +65,7 @@ export const createEmptyGestante = (): GestanteData => ({
   comorbidades: 'NEGA',
   muc: 'NEGA',
   queixasAdicionais: '',
+  hdaDetails: '',
   customNotes: ''
 });
 
@@ -86,6 +88,7 @@ export const createEmptyCuretagem = (): CuretagemData => ({
   comorbidades: 'NEGA',
   muc: 'NEGA',
   queixasAdicionais: '',
+  hdaDetails: '',
   customNotes: ''
 });
 
