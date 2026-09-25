@@ -19,6 +19,11 @@ export const supabase = isSupabaseConfigured()
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+export const CLIENT_SESSION_ID =
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : Math.random().toString(36).substring(2) + Date.now().toString(36);
+
 /**
  * Converte um objeto Bed (camelCase) para o formato da tabela do Supabase (snake_case).
  */
@@ -48,7 +53,11 @@ export const bedToDbRow = (bed: Bed) => ({
   hd_text: bed.hdText,
   conduta_text: bed.condutaText,
   rn: bed.rn,
-  data: bed.data
+  data: {
+    ...(bed.data || {}),
+    _clientSessionId: CLIENT_SESSION_ID,
+    _clientTimestamp: Date.now()
+  }
 });
 
 /**
@@ -182,7 +191,13 @@ export const subscribeToBeds = (
       (payload) => {
         if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
           if (payload.new && (payload.new as any).id) {
-            const bed = dbRowToBed(payload.new);
+            const row = payload.new as any;
+            // Se a alteração foi originada por esta mesma sessão/aba, ignora o eco
+            // para não sobrescrever a digitação em andamento com dados defasados.
+            if (row.data && row.data._clientSessionId === CLIENT_SESSION_ID) {
+              return;
+            }
+            const bed = dbRowToBed(row);
             onBedChange(bed);
           }
         } else if (payload.eventType === 'DELETE' && onBedDelete && payload.old) {

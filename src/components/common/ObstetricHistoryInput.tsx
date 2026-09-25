@@ -25,7 +25,7 @@ export const ObstetricHistoryInput: React.FC<ObstetricHistoryInputProps> = ({
   const [customText, setCustomText] = useState(value || parsed.formatted);
 
   useEffect(() => {
-    if (value) {
+    if (value && value !== customText) {
       const p = parseObstetricHistory(value);
       setG(p.g);
       setN(p.n);

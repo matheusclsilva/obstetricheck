@@ -25,11 +25,16 @@ import {
 import {
   isSupabaseConfigured,
   fetchBedsFromSupabase,
-  saveBedToSupabase,
   seedBedsToSupabase,
   deleteBedFromSupabase,
   subscribeToBeds
 } from './services/supabase';
+import {
+  queueBedSave,
+  saveBedImmediately,
+  flushPendingBedSaves,
+  isBedLockedForRemoteSync
+} from './services/bedSyncManager';
 
 export default function App() {
   const [beds, setBeds] = useState<Bed[]>(() => loadBedsFromStorage());
@@ -64,6 +69,12 @@ export default function App() {
     // Inscrição Realtime (alterações feitas em outro dispositivo chegam instantaneamente)
     const unsubscribe = subscribeToBeds(
       (incomingBed) => {
+        // Se este leito está em edição local ativa (com debounce ou editado nos últimos 3s),
+        // não sobrescrevemos a tela para não engolir o que o médico está digitando.
+        if (isBedLockedForRemoteSync(incomingBed.id)) {
+          return;
+        }
+
         setBeds((prev) => {
           const index = prev.findIndex((b) => b.id === incomingBed.id);
           if (index >= 0) {
@@ -82,12 +93,17 @@ export default function App() {
     return () => {
       isMounted = false;
       unsubscribe();
+      flushPendingBedSaves();
     };
   }, []);
 
-  // Sincronização em Cache Local (LocalStorage)
+  // Sincronização em Cache Local (LocalStorage) com debounce de 400ms para manter a digitação fluida
   useEffect(() => {
-    saveBedsToStorage(beds);
+    const timer = setTimeout(() => {
+      saveBedsToStorage(beds);
+    }, 400);
+
+    return () => clearTimeout(timer);
   }, [beds]);
 
   const showToast = (text: string) => {
@@ -134,54 +150,58 @@ export default function App() {
     };
   }, [beds]);
 
-  // Bed updates
+  // Bed updates com digitação suave e debounced sync
   const handleUpdateBed = (updates: Partial<Bed>) => {
-    setBeds((prev) =>
-      prev.map((b) => {
-        if (b.id !== activeBedId) return b;
-        const updated = { ...b, ...updates };
-        saveBedToSupabase(updated);
-        return updated;
-      })
-    );
+    setBeds((prev) => {
+      const index = prev.findIndex((b) => b.id === activeBedId);
+      if (index === -1) return prev;
+      const updated = { ...prev[index], ...updates };
+      queueBedSave(updated);
+      const next = [...prev];
+      next[index] = updated;
+      return next;
+    });
   };
 
   const handleUpdateBedData = (updater: (prev: any) => any) => {
-    setBeds((prev) =>
-      prev.map((b) => {
-        if (b.id !== activeBedId) return b;
-        const currentData = b.data || {};
-        const updatedData = updater(currentData);
+    setBeds((prev) => {
+      const index = prev.findIndex((b) => b.id === activeBedId);
+      if (index === -1) return prev;
+      const b = prev[index];
+      const currentData = b.data || {};
+      const updatedData = updater(currentData);
 
-        // Sincroniza bloodPressure do leito se vier valor numérico
-        let nextBP = b.bloodPressure;
-        if (typeof updatedData.bpValue === 'string' && /\d/.test(updatedData.bpValue)) {
-          nextBP = updatedData.bpValue;
-        } else if (typeof updatedData.bloodPressure === 'string' && /\d/.test(updatedData.bloodPressure)) {
-          nextBP = updatedData.bloodPressure;
-        }
+      // Sincroniza bloodPressure do leito se vier valor numérico
+      let nextBP = b.bloodPressure;
+      if (typeof updatedData.bpValue === 'string' && /\d/.test(updatedData.bpValue)) {
+        nextBP = updatedData.bpValue;
+      } else if (typeof updatedData.bloodPressure === 'string' && /\d/.test(updatedData.bloodPressure)) {
+        nextBP = updatedData.bloodPressure;
+      }
 
-        // Sincroniza história obstétrica se vier alterada
-        let nextObst = b.obstetricHistory;
-        if (typeof updatedData.obstetricHistory === 'string' && updatedData.obstetricHistory.trim()) {
-          nextObst = updatedData.obstetricHistory;
-        }
+      // Sincroniza história obstétrica se vier alterada
+      let nextObst = b.obstetricHistory;
+      if (typeof updatedData.obstetricHistory === 'string' && updatedData.obstetricHistory.trim()) {
+        nextObst = updatedData.obstetricHistory;
+      }
 
-        const updatedBed = {
-          ...b,
-          bloodPressure: nextBP,
-          obstetricHistory: nextObst,
-          atestadoPaciente: updatedData.atestadoPaciente ?? b.atestadoPaciente,
-          atestadoPacienteDias: updatedData.atestadoPacienteDias ?? b.atestadoPacienteDias,
-          atestadoAcompanhante: updatedData.atestadoAcompanhante ?? b.atestadoAcompanhante,
-          atestadoAcompanhanteNome: updatedData.atestadoAcompanhanteNome ?? b.atestadoAcompanhanteNome,
-          atestadoAcompanhanteDias: updatedData.atestadoAcompanhanteDias ?? b.atestadoAcompanhanteDias,
-          data: updatedData
-        };
-        saveBedToSupabase(updatedBed);
-        return updatedBed;
-      })
-    );
+      const updatedBed = {
+        ...b,
+        bloodPressure: nextBP,
+        obstetricHistory: nextObst,
+        atestadoPaciente: updatedData.atestadoPaciente ?? b.atestadoPaciente,
+        atestadoPacienteDias: updatedData.atestadoPacienteDias ?? b.atestadoPacienteDias,
+        atestadoAcompanhante: updatedData.atestadoAcompanhante ?? b.atestadoAcompanhante,
+        atestadoAcompanhanteNome: updatedData.atestadoAcompanhanteNome ?? b.atestadoAcompanhanteNome,
+        atestadoAcompanhanteDias: updatedData.atestadoAcompanhanteDias ?? b.atestadoAcompanhanteDias,
+        data: updatedData
+      };
+
+      queueBedSave(updatedBed);
+      const next = [...prev];
+      next[index] = updatedBed;
+      return next;
+    });
   };
 
   const handleSetBedType = (type: BedType) => {
@@ -217,7 +237,7 @@ export default function App() {
               ? `Paciente ${b.label}`
               : b.patientName
         };
-        saveBedToSupabase(updated);
+        saveBedImmediately(updated);
         return updated;
       })
     );
@@ -235,7 +255,7 @@ export default function App() {
             : `${b.label} marcado como PENDENTE`
         );
         const updated = { ...b, isReviewed: newStatus };
-        saveBedToSupabase(updated);
+        saveBedImmediately(updated);
         return updated;
       })
     );
@@ -260,7 +280,7 @@ export default function App() {
           intercorrencias: '',
           data: createEmptyPuerpera()
         };
-        saveBedToSupabase(cleared);
+        saveBedImmediately(cleared);
         return cleared;
       })
     );
@@ -291,7 +311,7 @@ export default function App() {
 
     setBeds((prev) => [...prev, bed]);
     setActiveBedId(nextId);
-    saveBedToSupabase(bed);
+    saveBedImmediately(bed);
     showToast(`Novo leito ${bed.label} adicionado com sucesso!`);
   };
 
@@ -316,6 +336,18 @@ export default function App() {
     showToast('Leitos restaurados para o padrão oficial da maternidade (26 leitos).');
   };
 
+  const handleSelectBed = (id: number) => {
+    if (id !== activeBedId) {
+      flushPendingBedSaves(activeBedId);
+      setActiveBedId(id);
+    }
+  };
+
+  const handleTabChange = (tab: string) => {
+    flushPendingBedSaves(activeBedId);
+    setActiveTab(tab);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans antialiased">
       {/* Toast Notification */}
@@ -335,7 +367,7 @@ export default function App() {
       <Header
         stats={stats}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         onOpenBedManager={() => setIsBedManagerOpen(true)}
         isCloudConnected={isCloudActive}
       />
@@ -345,8 +377,8 @@ export default function App() {
         beds={beds}
         activeBedId={activeBedId}
         onSelectBed={(id) => {
-          setActiveBedId(id);
-          if (activeTab === 'shift_summary') setActiveTab('checklist');
+          handleSelectBed(id);
+          if (activeTab === 'shift_summary') handleTabChange('checklist');
         }}
       />
 
@@ -356,7 +388,7 @@ export default function App() {
           activeBed={activeBed}
           activeTab={activeTab}
           activeAlerts={activeAlerts}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
           onUpdateBed={handleUpdateBed}
           onSetBedType={handleSetBedType}
           onToggleReviewed={handleToggleReviewed}
@@ -403,21 +435,21 @@ export default function App() {
                 bed={activeBed}
                 onUpdateBed={handleUpdateBed}
                 onUpdateData={handleUpdateBedData}
-                onNavigateToPrescription={() => setActiveTab('prescription')}
+                onNavigateToPrescription={() => handleTabChange('prescription')}
               />
             ) : activeBed.type === 'gestante' ? (
               <GestanteChecklist
                 bed={activeBed}
                 onUpdateBed={handleUpdateBed}
                 onUpdateData={handleUpdateBedData}
-                onNavigateToPrescription={() => setActiveTab('prescription')}
+                onNavigateToPrescription={() => handleTabChange('prescription')}
               />
             ) : (
               <CuretagemChecklist
                 bed={activeBed}
                 onUpdateBed={handleUpdateBed}
                 onUpdateData={handleUpdateBedData}
-                onNavigateToPrescription={() => setActiveTab('prescription')}
+                onNavigateToPrescription={() => handleTabChange('prescription')}
               />
             )}
           </div>
@@ -428,7 +460,7 @@ export default function App() {
           <PrescriptionTab
             bed={activeBed}
             onShowToast={showToast}
-            onNavigateToEvolution={() => setActiveTab('evolution')}
+            onNavigateToEvolution={() => handleTabChange('evolution')}
           />
         )}
 
@@ -438,7 +470,7 @@ export default function App() {
             bed={activeBed}
             onUpdateBed={handleUpdateBed}
             onShowToast={showToast}
-            onNavigateToDischarge={() => setActiveTab('discharge')}
+            onNavigateToDischarge={() => handleTabChange('discharge')}
           />
         )}
 
@@ -452,8 +484,8 @@ export default function App() {
           <ShiftSummaryTab
             beds={beds}
             onSelectBed={(id) => {
-              setActiveBedId(id);
-              setActiveTab('checklist');
+              handleSelectBed(id);
+              handleTabChange('checklist');
             }}
             onShowToast={showToast}
           />
