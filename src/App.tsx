@@ -14,7 +14,16 @@ import { ShiftSummaryTab } from './components/shiftSummary/ShiftSummaryTab';
 import { Toast } from './components/common/Toast';
 import { Bed, BedType } from './types/bed';
 import { StatsSummary } from './types/clinical';
-import { loadBedsFromStorage, saveBedsToStorage } from './utils/storage';
+import {
+  loadBedsFromStorage,
+  saveBedsToStorage,
+  getInitialActiveBedId,
+  getInitialActiveTab,
+  saveActiveBedId,
+  saveActiveTab,
+  syncNavigationUrl,
+  VALID_TABS
+} from './utils/storage';
 import { analyzeBedAlerts } from './utils/alertAnalyzer';
 import {
   createEmptyPuerpera,
@@ -38,11 +47,36 @@ import {
 
 export default function App() {
   const [beds, setBeds] = useState<Bed[]>(() => loadBedsFromStorage());
-  const [activeBedId, setActiveBedId] = useState<number>(() => beds[0]?.id || 1);
-  const [activeTab, setActiveTab] = useState<string>('checklist'); // 'checklist', 'prescription', 'evolution', 'discharge', 'shift_summary'
+  const [activeBedId, setActiveBedId] = useState<number>(() => getInitialActiveBedId(beds));
+  const [activeTab, setActiveTab] = useState<string>(() => getInitialActiveTab());
   const [isBedManagerOpen, setIsBedManagerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isCloudActive, setIsCloudActive] = useState<boolean>(() => isSupabaseConfigured());
+
+  // Sincroniza a URL inicial e dá suporte aos botões Voltar/Avançar do navegador
+  useEffect(() => {
+    syncNavigationUrl(activeBedId, activeTab);
+
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const bedParam = params.get('bed');
+      const tabParam = params.get('tab');
+      if (bedParam) {
+        const id = Number(bedParam);
+        if (!isNaN(id)) {
+          setActiveBedId(id);
+          saveActiveBedId(id);
+        }
+      }
+      if (tabParam && VALID_TABS.includes(tabParam)) {
+        setActiveTab(tabParam);
+        saveActiveTab(tabParam);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Sincronização inicial e Realtime com o Supabase
   useEffect(() => {
@@ -55,6 +89,15 @@ export default function App() {
         if (remoteBeds && remoteBeds.length > 0) {
           setBeds(remoteBeds);
           setIsCloudActive(true);
+          // Preserva o leito que o usuário está olhando se ele existir no banco remoto
+          setActiveBedId((currentId) => {
+            const exists = remoteBeds.some((b) => b.id === currentId);
+            if (exists) return currentId;
+            const fallbackId = remoteBeds[0]?.id || 1;
+            saveActiveBedId(fallbackId);
+            syncNavigationUrl(fallbackId, activeTab);
+            return fallbackId;
+          });
         } else {
           // Se o banco remoto ainda estiver vazio, inicializa com os leitos padrão
           await seedBedsToSupabase(beds);
@@ -311,6 +354,8 @@ export default function App() {
 
     setBeds((prev) => [...prev, bed]);
     setActiveBedId(nextId);
+    saveActiveBedId(nextId);
+    syncNavigationUrl(nextId, activeTab);
     saveBedImmediately(bed);
     showToast(`Novo leito ${bed.label} adicionado com sucesso!`);
   };
@@ -324,14 +369,20 @@ export default function App() {
     deleteBedFromSupabase(bedId);
     if (activeBedId === bedId) {
       const remaining = beds.filter((b) => b.id !== bedId);
-      setActiveBedId(remaining[0]?.id || 1);
+      const nextId = remaining[0]?.id || 1;
+      setActiveBedId(nextId);
+      saveActiveBedId(nextId);
+      syncNavigationUrl(nextId, activeTab);
     }
     showToast('Leito removido do sistema.');
   };
 
   const handleResetBeds = () => {
     setBeds(INITIAL_BEDS);
-    setActiveBedId(INITIAL_BEDS[0].id);
+    const firstId = INITIAL_BEDS[0].id;
+    setActiveBedId(firstId);
+    saveActiveBedId(firstId);
+    syncNavigationUrl(firstId, activeTab);
     seedBedsToSupabase(INITIAL_BEDS);
     showToast('Leitos restaurados para o padrão oficial da maternidade (26 leitos).');
   };
@@ -340,12 +391,16 @@ export default function App() {
     if (id !== activeBedId) {
       flushPendingBedSaves(activeBedId);
       setActiveBedId(id);
+      saveActiveBedId(id);
+      syncNavigationUrl(id, activeTab);
     }
   };
 
   const handleTabChange = (tab: string) => {
     flushPendingBedSaves(activeBedId);
     setActiveTab(tab);
+    saveActiveTab(tab);
+    syncNavigationUrl(activeBedId, tab);
   };
 
   return (
