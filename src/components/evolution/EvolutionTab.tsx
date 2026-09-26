@@ -323,6 +323,44 @@ export const EvolutionTab: React.FC<EvolutionTabProps> = ({
                 />
               </div>
 
+              {/* FC e Temperatura aferidas (alimentam SSVV; em branco saem como ___ na evolução) */}
+              <div className="md:col-span-2 grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase block mb-1">FC (bpm):</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={bed.data?.heartRate ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^\d]/g, '').slice(0, 3);
+                      onUpdateBed?.({ data: { ...(bed.data || {}), heartRate: val } });
+                    }}
+                    placeholder="Ex: 80"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-bold focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase block mb-1">TAX (°C):</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={bed.data?.temperatureValue ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^\d.,]/g, '').slice(0, 4);
+                      const num = parseFloat(val.replace(',', '.'));
+                      const next: any = { ...(bed.data || {}), temperatureValue: val };
+                      // Mantém o status febril/afebril do checklist coerente com o valor digitado
+                      if (!isNaN(num) && val.length >= 2) {
+                        next.temperature = num >= 37.8 ? 'febril' : 'afebril';
+                      }
+                      onUpdateBed?.({ data: next });
+                    }}
+                    placeholder="Ex: 36,5"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 font-bold focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
               {/* HDA (Span 2) */}
               <div className="md:col-span-2 space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1">
@@ -363,7 +401,7 @@ export const EvolutionTab: React.FC<EvolutionTabProps> = ({
                     rows={3}
                     value={currentHdaBody}
                     onChange={(e) => handleHdaChange(e.target.value)}
-                    placeholder="EM 04/09/26 DE PÓS CESÁRIA, DEU ENTRADA AO SERVIÇO EM 18/09/2026, A CEFALEIA E DOR LOMBAR E PA ELEVADA DE 160X111MMHG. SENDO SULFATADA."
+                    placeholder="EM 04/09/26 DE PÓS CESÁREA, DEU ENTRADA AO SERVIÇO EM 18/09/2026, A CEFALEIA E DOR LOMBAR E PA ELEVADA DE 160X111MMHG. SENDO SULFATADA."
                     className="w-full p-2.5 text-xs text-slate-800 focus:outline-none font-mono leading-relaxed resize-y"
                   />
                 </div>
@@ -394,8 +432,8 @@ export const EvolutionTab: React.FC<EvolutionTabProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      const bpVal = getBedBP(bed).toUpperCase().replace('/', 'X');
-                      const txt = `EM ${bed.data?.deliveryDate || bed.admissionDate || '04/09/26'} DE PÓS CESÁRIA, DEU ENTRADA AO SERVIÇO EM ${bed.admissionDate || '18/09/2026'}, A CEFALEIA E DOR LOMBAR E PA ELEVADA DE ${bpVal}MMHG. SENDO SULFATADA.`;
+                      const bpVal = getBedBP(bed).toUpperCase().replace('/', 'X') || '___X___';
+                      const txt = `EM ${bed.data?.deliveryDate || '__/__/__'} DE PÓS CESÁREA, DEU ENTRADA AO SERVIÇO EM ${bed.admissionDate || '__/__/__'}, A CEFALEIA E DOR LOMBAR E PA ELEVADA DE ${bpVal}MMHG. SENDO SULFATADA.`;
                       updateField('hda', txt);
                       onShowToast('Modelo pós-cesárea inserido!');
                     }}
@@ -475,15 +513,16 @@ export const EvolutionTab: React.FC<EvolutionTabProps> = ({
                   </label>
                   <button
                     type="button"
-                    onClick={() =>
-                      updateField(
-                        'examesLabText',
-                        `LAB 18/09/26: UREIA: 49| HB: 9,6| HT: 28,2| LEUCO: 12.710| PLAQ: 497.000| CREAT: 1,18| TGO: 27 | TGP: 33| EAS: LEUCO 7 HEMACIAS 15\nLAB 20/09/26: UREIA: 25| CREAT: 1| TGO: 30| TGP: 43| BILI T: 0,43 BILI D: 0,1| BILI IND: 0,33| LDH: 552| HB: 12,1| HT: 37,0| LEUCO: 12540| PLAQ: 677.0000| EAS: HEM: 462/ LEUCO: 389`
-                      )
-                    }
+                    onClick={() => {
+                      // Insere apenas a ESTRUTURA em branco (nunca valores de outra paciente)
+                      const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                      const modelo = `LAB ${hoje}: HB: | HT: | LEUCO: | PLAQ: | UREIA: | CREAT: | TGO: | TGP: `;
+                      const atual = (bed.examesLabText || '').trim();
+                      updateField('examesLabText', atual ? `${atual}\n${modelo}` : modelo);
+                    }}
                     className="text-[10px] text-purple-700 hover:underline cursor-pointer"
                   >
-                    Inserir Exames Modelo (18 e 20/09)
+                    + Linha de LAB em branco
                   </button>
                 </div>
                 <textarea

@@ -15,7 +15,7 @@ import { ObstetricHistoryInput } from '../common/ObstetricHistoryInput';
 import { AtestadoChecklistSection } from './AtestadoChecklistSection';
 import { ClinicalHistoryChecklistSection } from './ClinicalHistoryChecklistSection';
 import { HdaAnamneseChecklistSection } from './HdaAnamneseChecklistSection';
-import { parseAndEvaluateBP, getBedBP } from '../../utils/bpAnalyzer';
+import { parseAndEvaluateBP, getBedBP, getBedBPStatus } from '../../utils/bpAnalyzer';
 
 interface GestanteChecklistProps {
   bed: Bed;
@@ -65,8 +65,7 @@ export const GestanteChecklist: React.FC<GestanteChecklistProps> = ({
     }
   };
 
-  const isSevereBP = d.bloodPressure === 'grave' ||
-    (d.bpValue && (parseInt(d.bpValue.split('/')[0]) >= 160 || parseInt(d.bpValue.split('/')[1]) >= 110));
+  const isSevereBP = getBedBPStatus(bed).isSevere;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">

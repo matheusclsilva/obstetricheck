@@ -91,16 +91,17 @@ export const generateDefaultHdaBody = (bed: Bed): string => {
 
   if (isPuerpera) {
     const isCesarea = d.deliveryType?.includes('cesarea');
-    const partoTipo = isCesarea ? 'CESÁRIA' : 'PARTO NORMAL';
-    const dataParto = d.deliveryDate || bed.admissionDate || new Date().toLocaleDateString('pt-BR');
-    const dataEntrada = bed.admissionDate || dataParto;
+    const partoTipo = isCesarea ? 'CESÁREA' : 'PARTO NORMAL';
+    // Data não informada sai como lacuna para preencher (não assume data de hoje nem a da admissão)
+    const dataParto = d.deliveryDate || '__/__/__';
+    const dataEntrada = bed.admissionDate || '__/__/__';
     const horaEntrada = bed.admissionTime ? ` ÀS ${bed.admissionTime}` : '';
     const queixas = bed.intercorrencias ? `, A ${bed.intercorrencias.toUpperCase()}` : '';
 
     return `EM ${dataParto} DE PÓS ${partoTipo}, DEU ENTRADA AO SERVIÇO EM ${dataEntrada}${horaEntrada}${queixas}${bpPart}${sulfatadaPart}${detailsPart}`;
   } else if (isGestante) {
     const igStr = `${d.gestationalAge || 32} SEMANAS${d.gestationalDays ? ` E ${d.gestationalDays} DIAS` : ''}`;
-    const dataEntrada = bed.admissionDate || new Date().toLocaleDateString('pt-BR');
+    const dataEntrada = bed.admissionDate || '__/__/__';
     const horaEntrada = bed.admissionTime ? ` ÀS ${bed.admissionTime}` : '';
     const motivosFormatados = formatAdmissionReasonsList(d.admissionReason);
     const motivo = motivosFormatados || bed.diagnosis?.toUpperCase() || 'QUADRO OBSTÉTRICO';
@@ -110,9 +111,13 @@ export const generateDefaultHdaBody = (bed: Bed): string => {
 
     return `GESTANTE COM IG DE ${igStr} (${d.gestationalAgeMethod || 'ALEGADA'}), DEU ENTRADA AO SERVIÇO EM ${dataEntrada}${horaEntrada} POR ${motivo}${queixas}${bpPart}${sulfatadaPart}${detailsPart}`;
   } else if (isCuretagem) {
-    const dataEntrada = bed.admissionDate || new Date().toLocaleDateString('pt-BR');
+    const dataEntrada = bed.admissionDate || '__/__/__';
     const horaEntrada = bed.admissionTime ? ` ÀS ${bed.admissionTime}` : '';
-    return `ADMITIDA EM ${dataEntrada}${horaEntrada} DEVIDO QUADRO DE ABORTAMENTO INCOMPLETO. SUBMETIDA A CURETAGEM UTERINA SOB RAQUIANESTESIA.${detailsPart}`;
+    const motivo = (d.admissionReason || 'ABORTAMENTO INCOMPLETO').toString().toUpperCase();
+    const dataCuretagem = d.curetageDate ? ` EM ${d.curetageDate}` : '';
+    const horaCuretagem = d.curetageTime ? ` ÀS ${d.curetageTime}` : '';
+    const anestesia = d.anesthesia ? ` SOB ${d.anesthesia.toUpperCase()}` : '';
+    return `ADMITIDA EM ${dataEntrada}${horaEntrada} DEVIDO QUADRO DE ${motivo}. SUBMETIDA A CURETAGEM UTERINA${dataCuretagem}${horaCuretagem}${anestesia}.${detailsPart}`;
   } else {
     return `INTERNADA NO LEITO ${bed.label} EM ${bed.admissionDate || 'DATA NÃO INFORMADA'}.${detailsPart}`;
   }
@@ -180,8 +185,11 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
     }
   }
 
-  // 5. EVOLUÇÃO
+  // 5. EVOLUÇÃO (reflete o que foi marcado no checklist)
   const internment = bed.internmentDays || 1;
+  const painIntensity =
+    d.painLevel === '7-10' ? 'FORTE' : d.painLevel === '4-6' ? 'MODERADA' : 'LEVE';
+  const hasPain = d.painLevel && d.painLevel !== '0';
   let evolucaoText = '';
   if (isPuerpera) {
     const isCesarea = d.deliveryType?.includes('cesarea');
@@ -190,25 +198,47 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
         ? `${d.postpartumDay.replace('D', '')}° DPO`
         : d.postpartumDay
       : '1° DPO';
-    const dietStr = d.oralDiet === 'jejum' ? 'EM JEJUM' : 'ACEITANDO BEM A DIETA';
-    const deambStr = d.deambulation === 'ausente' ? 'AINDA NÃO DEAMBULOU' : 'DEAMBULANDO SEM AUXILIO';
-    const elimStr = d.eliminations?.includes('svd_em_uso')
-      ? 'DIURESE POR SVD, FLATOS PRESENTES E EVACUAÇÕES'
-      : 'DIURESE E FLATOS PRESENTE E EVACUAÇÕES';
-    const queixasStr = d.painLevel === '0' ? 'NEGA QUEIXAS NO MOMENTO' : `QUEIXA-SE DE DOR LEVE/MODERADA EM FO (EVA ${d.painLevel}/10)`;
+    const dietStr =
+      d.oralDiet === 'jejum'
+        ? 'EM JEJUM'
+        : d.oralDiet === 'pouco'
+        ? 'ACEITAÇÃO PARCIAL DA DIETA'
+        : d.oralDiet === 'recusando'
+        ? 'RECUSANDO A DIETA'
+        : 'ACEITANDO BEM A DIETA';
+    const deambStr =
+      d.deambulation === 'ausente'
+        ? 'AINDA NÃO DEAMBULOU'
+        : d.deambulation === 'com_auxilio'
+        ? 'DEAMBULANDO COM AUXÍLIO'
+        : 'DEAMBULANDO SEM AUXÍLIO';
+    const elim: string[] = d.eliminations || [];
+    const diureseStr = elim.includes('svd_em_uso')
+      ? 'DIURESE POR SVD'
+      : elim.includes('retencao_globo')
+      ? 'RETENÇÃO URINÁRIA (GLOBO VESICAL PALPÁVEL)'
+      : 'DIURESE ESPONTÂNEA PRESENTE';
+    const flatosStr = elim.includes('flatos_presentes') ? 'FLATOS PRESENTES' : 'FLATOS AUSENTES';
+    const evacStr = elim.includes('constipacao') ? 'EVACUAÇÕES AUSENTES' : 'EVACUAÇÕES PRESENTES';
+    const queixasStr = hasPain
+      ? `QUEIXA-SE DE DOR ${painIntensity} ${isCesarea ? 'EM FO' : 'EM REGIÃO PERINEAL/BAIXO VENTRE'} (EVA ${d.painLevel}/10)`
+      : 'NEGA QUEIXAS NO MOMENTO';
 
-    evolucaoText = `PACIENTE EM ${internment}° DIA DE INTERNAÇÃO DE LEITO DE ENFERMARIA E ${dpoStr} DE ${isCesarea ? 'CASÁRIA' : 'PARTO NORMAL'}. ${dietStr}, ${deambStr}, ${elimStr}. ${queixasStr}`;
+    evolucaoText = `PACIENTE EM ${internment}° DIA DE INTERNAÇÃO DE LEITO DE ENFERMARIA E ${dpoStr} DE ${isCesarea ? 'CESÁREA' : 'PARTO NORMAL'}. ${dietStr}, ${deambStr}, ${diureseStr}, ${flatosStr}, ${evacStr}. ${queixasStr}`;
   } else if (isGestante) {
     const igStr = `${d.gestationalAge || 32} SEMANAS${d.gestationalDays ? ` E ${d.gestationalDays} DIAS` : ''}`;
     const dietStr = d.oralDiet === 'jejum' ? 'EM JEJUM' : 'ACEITANDO BEM A DIETA';
-    const deambStr = d.deambulation === 'ausente' ? 'EM REPOUSO NO LEITO' : 'DEAMBULANDO SEM AUXILIO';
-    const queixasStr = d.painLevel === '0' ? 'NEGA QUEIXAS NO MOMENTO' : 'QUEIXAS ÁLGICAS LEVES';
+    const deambStr = d.deambulation === 'ausente' ? 'EM REPOUSO NO LEITO' : 'DEAMBULANDO SEM AUXÍLIO';
+    const queixasStr = hasPain ? `QUEIXA-SE DE DOR ${painIntensity} (EVA ${d.painLevel}/10)` : 'NEGA QUEIXAS NO MOMENTO';
 
-    evolucaoText = `PACIENTE EM ${internment}° DIA DE INTERNAÇÃO DE LEITO DE ENFERMARIA COM IG DE ${igStr}. ${dietStr}, ${deambStr}, DIURESE E FLATOS PRESENTE E EVACUAÇÕES. ${queixasStr}`;
+    evolucaoText = `PACIENTE EM ${internment}° DIA DE INTERNAÇÃO DE LEITO DE ENFERMARIA COM IG DE ${igStr}. ${dietStr}, ${deambStr}, DIURESE E FLATOS PRESENTES E EVACUAÇÕES. ${queixasStr}`;
   } else if (isCuretagem) {
-    evolucaoText = `PACIENTE EM ${internment}° DIA DE INTERNAÇÃO DE LEITO DE ENFERMARIA EM POI DE CURETAGEM UTERINA. ACEITANDO BEM A DIETA, DEAMBULANDO SEM AUXILIO, DIURESE E FLATOS PRESENTE E EVACUAÇÕES. NEGA QUEIXAS NO MOMENTO`;
+    const queixasStr = hasPain
+      ? `REFERE CÓLICA/DOR ${painIntensity} EM BAIXO VENTRE (EVA ${d.painLevel}/10)`
+      : 'NEGA QUEIXAS NO MOMENTO';
+    evolucaoText = `PACIENTE EM ${internment}° DIA DE INTERNAÇÃO DE LEITO DE ENFERMARIA EM POI DE CURETAGEM UTERINA. ACEITANDO BEM A DIETA, DEAMBULANDO SEM AUXÍLIO, DIURESE E FLATOS PRESENTES E EVACUAÇÕES. ${queixasStr}`;
   } else {
-    evolucaoText = `PACIENTE EM ${internment}° DIA DE INTERNAÇÃO DE LEITO DE ENFERMARIA. ACEITANDO BEM A DIETA, DEAMBULANDO SEM AUXILIO, DIURESE E FLATOS PRESENTE. NEGA QUEIXAS NO MOMENTO`;
+    evolucaoText = `PACIENTE EM ${internment}° DIA DE INTERNAÇÃO DE LEITO DE ENFERMARIA. ACEITANDO BEM A DIETA, DEAMBULANDO SEM AUXÍLIO, DIURESE E FLATOS PRESENTES. NEGA QUEIXAS NO MOMENTO`;
   }
 
   // Se houver queixas adicionais escritas registradas pela equipe:
@@ -221,62 +251,124 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
     evolucaoText += ` QUEIXAS ADICIONAIS: ${rawQueixasAdicionais.trim().toUpperCase()}.`;
   }
 
-  // 6. EXAME FÍSICO
+  // 6. EXAME FÍSICO (reflete o que foi marcado no checklist)
+  const estadoGeral = `BEG, CORADA, ${d.temperature === 'febril' ? 'FEBRIL' : 'AFEBRIL'}, CONSCIENTE, ORIENTADA, EUPNEICA`;
   let exameFisicoText = '';
   if (isPuerpera) {
     const isCesarea = d.deliveryType?.includes('cesarea');
-    const mamasStr = d.breasts?.includes('apojadura')
+    const breasts: string[] = d.breasts || [];
+    let mamasStr = breasts.includes('apojadura')
       ? 'MAMAS COM APOJADURA FISIOLÓGICA'
-      : d.breasts?.includes('ingurgitamento')
+      : breasts.includes('ingurgitamento')
       ? 'MAMAS INGURGITADAS'
       : 'MAMAS FLÁCIDAS';
-    const foStr = isCesarea ? 'FO BOM ASPECTO' : 'PERÍNEO ÍNTEGRO';
-    const loquiosStr = d.lochia === 'aumentado' ? 'LÓQUIOS AUMENTADOS' : d.lochia === 'fetido' ? 'LÓQUIOS FÉTIDOS' : 'LÓQUIOS FISIOLÓGICOS';
+    if (breasts.includes('fissura')) mamasStr += ' COM FISSURA MAMILAR';
+    const abdomeStr =
+      d.uterus === 'doloroso'
+        ? 'ABDOME FLÁCIDO, DOLOROSO À PALPAÇÃO EM HIPOGÁSTRIO'
+        : 'ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA';
+    const uteroStr =
+      d.uterus === 'hipotonico'
+        ? 'ÚTERO HIPOTÔNICO'
+        : d.uterus === 'subinvoluido'
+        ? 'ÚTERO SUBINVOLUÍDO'
+        : d.uterus === 'doloroso'
+        ? 'ÚTERO CONTRAÍDO, DOLOROSO À PALPAÇÃO'
+        : 'ÚTERO CONTRAÍDO ABAIXO DA CICATRIZ UMBILICAL';
+    let feridaStr: string;
+    if (isCesarea) {
+      feridaStr = d.wound === 'curativo_sangrante' ? 'FO COM CURATIVO SANGRANTE' : 'FO BOM ASPECTO';
+    } else {
+      feridaStr =
+        d.wound === 'laceracao_suturada'
+          ? 'PERÍNEO COM LACERAÇÃO SUTURADA'
+          : d.wound === 'hematoma_perineal'
+          ? 'HEMATOMA PERINEAL'
+          : 'PERÍNEO ÍNTEGRO';
+    }
+    const loquiosStr =
+      d.lochia === 'aumentado'
+        ? 'LÓQUIOS AUMENTADOS'
+        : d.lochia === 'coagulos'
+        ? 'LÓQUIOS COM COÁGULOS'
+        : d.lochia === 'fetido'
+        ? 'LÓQUIOS FÉTIDOS'
+        : 'LÓQUIOS FISIOLÓGICOS';
 
-    exameFisicoText = `BEG, CORADA, AFEBRIL, CONSCIENTE, ORIENTADA, EUPNEICA, ${mamasStr}, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, ÚTERO CONTRAÍDO ABAIXO DA CICATRIZ UMBILICAL, ${foStr}, ${loquiosStr}, MMII SEM EDEMAS.`;
+    exameFisicoText = `${estadoGeral}, ${mamasStr}, ${abdomeStr}, ${uteroStr}, ${feridaStr}, ${loquiosStr}, MMII SEM EDEMAS.`;
   } else if (isGestante) {
     const ig = d.gestationalAge || 32;
     const bcfTexto = ig > 14
       ? `BCF: ${d.fhrValue || 140} BPM`
       : 'BCF INAUDÍVEL AO SONAR DEVIDO IG (≤ 14 SEM)';
+    const dinamicaStr = d.dynamics === 'ativo' ? 'PRESENTE' : d.dynamics === 'irregular' ? 'IRREGULAR' : 'AUSENTE';
+    const tonusStr = d.uterineTone === 'hipertonia' ? 'HIPERTONIA UTERINA' : 'TÔNUS UTERINO NORMAL';
+    const toqueStr =
+      d.vaginalExam === 'fechado'
+        ? 'TOQUE VAGINAL: COLO FECHADO'
+        : d.vaginalExam === 'dilatando'
+        ? 'TOQUE VAGINAL: COLO EM DILATAÇÃO'
+        : 'TOQUE VAGINAL NÃO REALIZADO';
 
     if (ig >= 20) {
-      const dinamicaStr = d.dynamics === 'ativo' ? 'PRESENTE' : d.dynamics === 'irregular' ? 'IRREGULAR' : 'AUSENTE';
-      const perdasStr = d.vaginalLosses === 'sangramento' ? 'COM SANGRAMENTO VAGINAL ATIVO' : d.vaginalLosses === 'liquido_claro' ? 'LÍQUIDO CLARO' : 'AUSENTES';
+      const perdasMap: Record<string, string> = {
+        ausente: 'AUSENTES',
+        tampao: 'TAMPÃO MUCOSO',
+        liquido_claro: 'LÍQUIDO CLARO',
+        liquido_meconial: 'LÍQUIDO MECONIAL',
+        sangramento: 'SANGRAMENTO VAGINAL ATIVO'
+      };
+      const perdasStr = perdasMap[d.vaginalLosses] || 'AUSENTES';
       const edemasStr = d.edema === 'ausente' || !d.edema ? 'SEM EDEMAS' : `COM EDEMA ${d.edema}`;
 
-      exameFisicoText = `BEG, CORADA, AFEBRIL, CONSCIENTE, ORIENTADA, EUPNEICA, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, DINÂMICA UTERINA ${dinamicaStr}, TÔNUS UTERINO NORMAL, ${bcfTexto}, TOQUE VAGINAL NÃO REALIZADO, MMII ${edemasStr}, PERDAS VAGINAIS ${perdasStr}.`;
+      exameFisicoText = `${estadoGeral}, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, DINÂMICA UTERINA ${dinamicaStr}, ${tonusStr}, ${bcfTexto}, ${toqueStr}, MMII ${edemasStr}, PERDAS VAGINAIS: ${perdasStr}.`;
     } else {
-      const perdasStr = d.vaginalLosses === 'sangramento' ? 'SANGRAMENTO VAGINAL ATIVO' : 'AUSENTES';
-      exameFisicoText = `BEG, CORADA, AFEBRIL, CONSCIENTE, ORIENTADA, EUPNEICA, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, DINÂMICA UTERINA AUSENTE, TÔNUS NORMAL, ${bcfTexto}, FORRO VAGINAL COM SANGRAMENTO ${perdasStr}, MMII SEM EDEMAS.`;
+      const forroStr = d.vaginalLosses === 'sangramento' ? 'FORRO VAGINAL COM SANGRAMENTO ATIVO' : 'FORRO VAGINAL SEM SANGRAMENTO';
+      exameFisicoText = `${estadoGeral}, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, ${bcfTexto}, ${toqueStr}, ${forroStr}, MMII SEM EDEMAS.`;
     }
   } else if (isCuretagem) {
     const sangrStr = d.bleeding === 'ausente' ? 'AUSENTE' : d.bleeding?.toUpperCase() || 'LEVE';
-    exameFisicoText = `BEG, CORADA, AFEBRIL, CONSCIENTE, ORIENTADA, EUPNEICA, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, FORRO VAGINAL SANGRAMENTO ${sangrStr}, MMII SEM EDEMAS.`;
+    exameFisicoText = `${estadoGeral}, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, FORRO VAGINAL SANGRAMENTO ${sangrStr}, MMII SEM EDEMAS.`;
   } else {
-    exameFisicoText = `BEG, CORADA, AFEBRIL, CONSCIENTE, ORIENTADA, EUPNEICA, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, MMII SEM EDEMAS.`;
+    exameFisicoText = `${estadoGeral}, ABDOME FLÁCIDO, INDOLOR A PALPAÇÃO DIFUSA, MMII SEM EDEMAS.`;
   }
 
-  // 7. SSVV (PA, TX, FC)
+  // 7. SSVV (PA, TX, FC) — valores NÃO aferidos saem como "___" para preenchimento, nunca inventados
   const bpRaw = getBedBP(bed);
   const bpEval = parseAndEvaluateBP(bpRaw);
   const bpFormatted = bpEval.shortFormatted
     ? `${bpEval.shortFormatted.toUpperCase()}MMHG`
-    : `${bpRaw.replace('/', 'X')}MMHG`;
-  const txFormatted = d.temperature === 'febril' ? '38,0°C' : '36,4°C';
-  const fcFormatted = `${d.heartRate || '60'} BPM`;
+    : bpRaw
+    ? `${bpRaw.toUpperCase().replace('/', 'X')}MMHG`
+    : '___X___MMHG';
+  const tempValue = String(d.temperatureValue ?? '').trim();
+  const txFormatted = tempValue
+    ? `${tempValue.replace('.', ',')}°C`
+    : d.temperature === 'febril'
+    ? '___°C (FEBRIL)'
+    : '___°C';
+  const fcValue = String(d.heartRate ?? '').trim();
+  const fcFormatted = fcValue ? `${fcValue} BPM` : '___ BPM';
 
   const ssvvLine = `PA ${bpFormatted}, TX ${txFormatted}, FC ${fcFormatted},`;
 
-  // 8. EXAMES COMPLEMENTARES
-  let examesLabText = bed.examesLabText;
+  // 8. EXAMES COMPLEMENTARES — só o que foi realmente registrado
+  let examesLabText = (bed.examesLabText || '').trim();
   if (!examesLabText) {
-    const todayShort = new Date().toLocaleDateString('pt-BR');
-    if (d.labExams?.hb) {
-      examesLabText = `LAB ${todayShort}: HB: ${d.labExams.hb}| HT: ${d.labExams.ht || '32'}| LEUCO: ${d.labExams.leuco || '9.980'}| PLAQ: ${d.labExams.plaq || '201.000'}| TS: ${d.labExams.tipagemMae || 'O+'}| TR SÍFILIS: ${d.labExams.trSifilis?.toUpperCase() || 'NÃO REAGENTE'}`;
-    } else {
-      examesLabText = `LAB ${todayShort}: HB: 11,3| HT: 32| LEUCO: 9.980| PLAQ: 201.000| TS: O+| SÍFILIS: NÃO REAGENTE| HIV: NÃO REAGENTE`;
-    }
+    const lab = d.labExams || {};
+    const trLabel = (v?: string) =>
+      v === 'reagente' ? 'REAGENTE' : v === 'nao_reagente' ? 'NÃO REAGENTE' : v === 'pendente' ? 'PENDENTE' : '';
+    const parts: string[] = [];
+    if (lab.hb) parts.push(`HB: ${lab.hb}`);
+    if (lab.ht) parts.push(`HT: ${lab.ht}`);
+    if (lab.leuco) parts.push(`LEUCO: ${lab.leuco}`);
+    if (lab.plaq) parts.push(`PLAQ: ${lab.plaq}`);
+    if (lab.tipagemMae) parts.push(`TS: ${lab.tipagemMae}`);
+    if (trLabel(lab.trSifilis)) parts.push(`TR SÍFILIS: ${trLabel(lab.trSifilis)}`);
+    if (lab.vdrl) parts.push(`VDRL: ${lab.vdrl}`);
+    if (trLabel(lab.trHiv)) parts.push(`HIV: ${trLabel(lab.trHiv)}`);
+    if (trLabel(lab.trHepatites)) parts.push(`HEPATITES: ${trLabel(lab.trHepatites)}`);
+    examesLabText = parts.length > 0 ? `LAB: ${parts.join('| ')}` : 'SEM EXAMES REGISTRADOS ATÉ O MOMENTO';
   }
 
   // 9. HD (HIPÓTESE DIAGNÓSTICA)
@@ -298,7 +390,34 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
   const isVaginal = d.deliveryType === 'vaginal' || d.deliveryType === 'forceps';
   const isPast24hVaginal = isVaginal && (d.postpartumDay === 'D1' || d.postpartumDay === 'D2' || d.postpartumDay === 'D3+');
   const isPast48hCesarea = !isVaginal && (d.postpartumDay === 'D2' || d.postpartumDay === 'D3+');
-  const isEligibleForDischarge = isPuerpera && (isPast24hVaginal || isPast48hCesarea) && !bpEval.isHypertensiveCrisis;
+  // Impedimentos clínicos: NÃO sugerir alta automaticamente se houver qualquer um deles
+  const elimsAlta: string[] = d.eliminations || [];
+  const clinicalBlockers =
+    bpEval.isHypertensiveCrisis ||
+    bpEval.isElevated ||
+    bpEval.isHypotensive ||
+    d.uterus === 'hipotonico' ||
+    d.uterus === 'subinvoluido' ||
+    d.uterus === 'doloroso' ||
+    d.lochia === 'fetido' ||
+    d.lochia === 'aumentado' ||
+    d.lochia === 'coagulos' ||
+    d.temperature === 'febril' ||
+    d.wound === 'curativo_sangrante' ||
+    d.wound === 'hematoma_perineal' ||
+    d.painLevel === '7-10' ||
+    elimsAlta.includes('retencao_globo');
+  // Regra do posto: só vai de alta com hemograma, testes rápidos e tipagem sanguínea
+  const labAlta = d.labExams || {};
+  const pendenciasAlta: string[] = [];
+  if (isPuerpera) {
+    const hasHemograma = Boolean(labAlta.hb) || /\bHB\s*:?\s*\d/i.test(bed.examesLabText || '');
+    if (!hasHemograma) pendenciasAlta.push('HEMOGRAMA');
+    if (!labAlta.trSifilis || labAlta.trSifilis === 'pendente') pendenciasAlta.push('TR SÍFILIS');
+    if (d.rhScreening === 'nao_aplica' && !labAlta.tipagemMae) pendenciasAlta.push('TIPAGEM SANGUÍNEA');
+  }
+  const isEligibleForDischarge =
+    isPuerpera && (isPast24hVaginal || isPast48hCesarea) && !clinicalBlockers && pendenciasAlta.length === 0;
 
   let condutaText = bed.condutaText;
   if (!condutaText) {
@@ -308,7 +427,8 @@ export const generateHospitalEvolutionText = (bed: Bed): string => {
       condutaText = `SUPORTE CLÍNICO\nCONTROLE DE PA DE 4/4H\nAVALIAR METILDOPA\nPESQUISA DE SINAIS DE IMINÊNCIA\nSOLICITO LAB`;
     } else if (isPuerpera) {
       const altaLinha = isEligibleForDischarge ? 'ALTA HOSPITALAR COM ORIENTAÇÕES' : 'AVALIAR ALTA';
-      condutaText = `SUPORTE CLÍNICO\nPRESCRIÇÃO ORAL\nOBSERVAR SANGRAMENTO VAGINAL\n${altaLinha}`;
+      const pendLinha = pendenciasAlta.length > 0 ? `\nPENDENTE PARA ALTA: ${pendenciasAlta.join(', ')}` : '';
+      condutaText = `SUPORTE CLÍNICO\nPRESCRIÇÃO ORAL\nOBSERVAR SANGRAMENTO VAGINAL\n${altaLinha}${pendLinha}`;
     } else if (isGestante) {
       const ig = d.gestationalAge || 32;
       const bcfLinha = ig > 14 ? ' E BCF DE 6/6H' : ' DE 6/6H';

@@ -1,4 +1,5 @@
 import { Bed } from '../types/bed';
+import { getBedBPStatus } from './bpAnalyzer';
 
 export const generatePrescriptionText = (bed: Bed): string => {
   if (!bed || bed.type === 'vago') {
@@ -111,14 +112,14 @@ export const generatePrescriptionText = (bed: Bed): string => {
   // --- GESTANTE ---
   else if (bed.type === 'gestante') {
     const d = bed.data || {};
-    const isSevereBP = d.bloodPressure === 'grave' ||
-      (d.bpValue && (parseInt(d.bpValue.split('/')[0]) >= 160 || parseInt(d.bpValue.split('/')[1]) >= 110));
+    // Usa o mesmo parser dos alertas (aceita 160x110, 160/110, 160 110, 16x11...)
+    const { isSevere: isSevereBP, isElevated: isElevatedBP } = getBedBPStatus(bed);
 
     // 1. DIETA
     lines.push(`1. DIETA:`);
     if (d.admissionReason?.includes('dmg')) {
       lines.push(`   - Dieta balanceada fracionada para Diabetes Mellitus Gestacional (DMG), 6 refeições/dia.`);
-    } else if (d.bloodPressure === 'elevada' || isSevereBP) {
+    } else if (isElevatedBP) {
       lines.push(`   - Dieta hipossódica para gestante hipertensa.`);
     } else {
       lines.push(`   - Dieta geral/branda para gestante.`);
@@ -130,14 +131,14 @@ export const generatePrescriptionText = (bed: Bed): string => {
 
     // 3. TERAPÊUTICA FARMACOLÓGICA
     lines.push(`\n3. TERAPÊUTICA FARMACOLÓGICA:`);
-    if (isSevereBP || (d.bloodPressure === 'elevada' && d.imminenceSigns?.length > 0)) {
+    if (isSevereBP || (isElevatedBP && d.imminenceSigns?.length > 0)) {
       lines.push(`   - [EMERGÊNCIA OBSTÉTRICA - PROTOCOLO ZUSPAN / SULFATAÇÃO]:`);
       lines.push(`     * CHAMAR PLANTONISTA IMEDIATAMENTE!`);
       lines.push(`     * Ataque: Sulfato de Magnésio 50% 4g (8ml) + 12ml SG 5% EV lento em 15 a 20 minutos.`);
       lines.push(`     * Manutenção: Sulfato de Magnésio 1g/h a 2g/h em BIC contínua por 24 horas.`);
       lines.push(`     * Ter à beira do leito: Gluconato de Cálcio 10% 1 ampola (antídoto).`);
       lines.push(`     * Se PAS >= 160 ou PAD >= 110: Hidralazina 5mg EV lento em bolus (repetir se refratário).`);
-    } else if (d.bloodPressure === 'elevada') {
+    } else if (isElevatedBP) {
       lines.push(`   - Metildopa 500mg VO de 8 em 8 horas (ajustar conforme mapa pressórico).`);
     }
 

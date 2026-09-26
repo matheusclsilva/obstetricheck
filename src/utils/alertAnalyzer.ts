@@ -1,6 +1,6 @@
 import { Bed } from '../types/bed';
 import { ClinicalAlert } from '../types/clinical';
-import { parseAndEvaluateBP, getBedBP } from './bpAnalyzer';
+import { parseAndEvaluateBP, getBedBP, getBedBPStatus } from './bpAnalyzer';
 
 export const analyzeBedAlerts = (bed: Bed): ClinicalAlert[] => {
   const alerts: ClinicalAlert[] = [];
@@ -137,10 +137,16 @@ export const analyzeBedAlerts = (bed: Bed): ClinicalAlert[] => {
     const ig = d.gestationalAge || 32;
     const fhr = d.fhrValue || 140;
     if (ig > 14 && (fhr < 110 || fhr > 160 || d.fetalVitality === 'bcf_anormal')) {
+      const fhrLabel =
+        fhr < 110
+          ? 'Bradicardia fetal sustentada'
+          : fhr > 160
+          ? 'Taquicardia fetal sustentada'
+          : 'Vitalidade marcada como anormal no checklist';
       alerts.push({
         severity: 'critical',
         title: 'VITALIDADE FETAL PREJUDICADA',
-        desc: `BCF ${fhr} bpm (${fhr < 110 ? 'Bradicardia fetal sustentada' : 'Taquicardia fetal sustentada'}). Realizar CTG e DLE imediato.`,
+        desc: `BCF ${fhr} bpm (${fhrLabel}). Realizar CTG e DLE imediato.`,
         actionRequired: 'Decúbito Lateral Esquerdo + CTG Urgente'
       });
     }
@@ -195,11 +201,12 @@ export const analyzeBedAlerts = (bed: Bed): ClinicalAlert[] => {
 
     // Pré-Eclâmpsia
     if (d.admissionReason?.includes('preeclampsia')) {
+      const peSevere = getBedBPStatus(bed).isSevere;
       alerts.push({
-        severity: d.bloodPressure === 'grave' ? 'critical' : 'high',
+        severity: peSevere ? 'critical' : 'high',
         title: 'PRÉ-ECLÂMPSIA (PE)',
         desc: 'Síndrome hipertensiva gestacional. Monitorar proteinúria, sinais de iminência (cefaleia/escotomas/epigastralgia) e protocolo Zuspan se PA grave.',
-        actionRequired: d.bloodPressure === 'grave' ? 'Zuspan' : 'Mapa PA'
+        actionRequired: peSevere ? 'Zuspan' : 'Mapa PA'
       });
     }
   }

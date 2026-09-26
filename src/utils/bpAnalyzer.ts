@@ -42,10 +42,15 @@ export function parseAndEvaluateBP(input?: string): BPEvaluation {
   let pad: number | undefined;
 
   // 1. Padrão com separador (/ , x , X , hífen , espaço)
-  const sepMatch = cleaned.match(/^(\d{2,3})\s*[\/xX\-\s]\s*(\d{2,3})$/);
+  const sepMatch = cleaned.match(/^(\d{1,3})\s*[\/xX\-\s]\s*(\d{1,3})$/);
   if (sepMatch) {
     pas = parseInt(sepMatch[1], 10);
     pad = parseInt(sepMatch[2], 10);
+    // Notação abreviada de enfermagem "14x9" / "12x8" -> 140x90 / 120x80
+    if (pas < 30 && pad < 20) {
+      pas *= 10;
+      pad *= 10;
+    }
   } else {
     // 2. Apenas dígitos digitados em sequência
     const digitsOnly = cleaned.replace(/\D/g, '');
@@ -60,19 +65,21 @@ export function parseAndEvaluateBP(input?: string): BPEvaluation {
     } else if (digitsOnly.length === 4) {
       // Ex: 9060 -> 90 x 60 ou 1490 -> 140 x 90
       const firstTwo = parseInt(digitsOnly.slice(0, 2), 10);
-      if (firstTwo < 50) {
-        // Ex: 1490 -> 140x90
-        pas = parseInt(digitsOnly.slice(0, 3), 10);
-        pad = parseInt(digitsOnly.slice(3), 10);
+      const lastTwo = parseInt(digitsOnly.slice(2), 10);
+      if (firstTwo < 30) {
+        // Notação abreviada: 1490 -> 140x90 | 1409 -> 140x90 | 1208 -> 120x80
+        pas = firstTwo * 10;
+        pad = lastTwo < 20 ? lastTwo * 10 : lastTwo;
       } else {
+        // Ex: 9060 -> 90x60
         pas = firstTwo;
-        pad = parseInt(digitsOnly.slice(2), 10);
+        pad = lastTwo;
       }
     }
   }
 
   // Se não foi possível extrair números válidos
-  if (!pas || !pad || isNaN(pas) || isNaN(pad) || pas < 40 || pas > 300 || pad < 20 || pad > 200) {
+  if (!pas || !pad || isNaN(pas) || isNaN(pad) || pas < 40 || pas > 300 || pad < 20 || pad > 200 || pad >= pas) {
     return {
       raw: input,
       formatted: input,
@@ -169,7 +176,8 @@ export function parseAndEvaluateBP(input?: string): BPEvaluation {
  * garantindo que a evolução médica e SSVV sempre recebam números válidos (ex: '140x90').
  */
 export function getBedBP(bed?: { bloodPressure?: string; data?: any } | null): string {
-  if (!bed) return '120/80';
+  // Sem aferição registrada: retorna vazio (NUNCA inventar um valor normal)
+  if (!bed) return '';
   const d = bed.data || {};
 
   // Lista de candidatos em ordem de prioridade
@@ -185,5 +193,28 @@ export function getBedBP(bed?: { bloodPressure?: string; data?: any } | null): s
     }
   }
 
-  return '120/80';
+  return '';
+}
+
+/**
+ * Status pressórico consolidado do leito.
+ * Se houver PA numérica válida, ela manda (aceita "160x110", "160/110", "160 110", "16x11"...).
+ * Só usa a classificação qualitativa salva ('elevada' | 'grave') quando não há número válido.
+ */
+export function getBedBPStatus(bed?: { bloodPressure?: string; data?: any } | null): {
+  evaluation: BPEvaluation;
+  isSevere: boolean;
+  isElevated: boolean;
+} {
+  const evaluation = parseAndEvaluateBP(getBedBP(bed));
+  const qualitative = bed?.data?.bloodPressure;
+  if (evaluation.pas !== undefined) {
+    return {
+      evaluation,
+      isSevere: evaluation.isHypertensiveCrisis,
+      isElevated: evaluation.isElevated,
+    };
+  }
+  const isSevere = qualitative === 'grave';
+  return { evaluation, isSevere, isElevated: isSevere || qualitative === 'elevada' };
 }

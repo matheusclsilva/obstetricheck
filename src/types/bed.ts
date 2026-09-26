@@ -19,7 +19,8 @@ export interface PuerperaData {
   rhScreening: 'rh_pos' | 'rh_neg_rn_pos' | 'nao_aplica';
   temperature: 'afebril' | 'febril';
   bloodPressure: string;
-  heartRate: string;
+  heartRate: string; // vazio = não aferida
+  temperatureValue?: string; // TAX aferida, ex: '36,5' (vazio = não aferida)
   obstetricHistory?: string; // ex: 'G03P03(n03 C 00)A00'
   labExams: {
     hb?: string;
@@ -64,6 +65,9 @@ export interface GestanteData {
   edema: 'ausente' | '1+' | '2+' | '3+' | '4+';
   vaginalExam: 'nao_realizado' | 'fechado' | 'dilatando';
   painLevel: '0' | '1-3' | '4-6' | '7-10';
+  heartRate?: string; // FC aferida (vazio = não aferida)
+  temperature?: 'afebril' | 'febril';
+  temperatureValue?: string; // TAX aferida, ex: '36,5'
   obstetricHistory?: string; // ex: 'G03P03(n03 C 00)A00'
   atestadoPaciente?: 'nao' | 'sim' | 'licenca_maternidade';
   atestadoPacienteDias?: string;
@@ -87,6 +91,8 @@ export interface CuretagemData {
   bleeding: 'ausente' | 'leve' | 'moderado' | 'intenso';
   bloodPressure?: string; // ex: '120/80'
   heartRate?: string;
+  temperature?: 'afebril' | 'febril';
+  temperatureValue?: string; // TAX aferida, ex: '36,5'
   painLevel: '0' | '1-3' | '4-6' | '7-10';
   obstetricHistory?: string; // ex: 'G03P03(n03 C 00)A00'
   atestadoPaciente?: 'nao' | 'sim' | 'licenca_maternidade';
