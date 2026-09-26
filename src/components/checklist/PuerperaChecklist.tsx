@@ -141,7 +141,7 @@ export const PuerperaChecklist: React.FC<PuerperaChecklistProps> = ({
                     type="text"
                     value={d.deliveryDate || ''}
                     onChange={(e) => updateField('deliveryDate', e.target.value)}
-                    placeholder="Ex: 04/09/26 (para HDA: 'EM 04/09/26 DE PÓS CASÁRIA, DEU ENTRADA EM 18/09/2026')"
+                    placeholder="Ex: 04/09/26 (para HDA: 'EM 04/09/26 DE PÓS CESÁREA, DEU ENTRADA EM 18/09/2026')"
                     className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-purple-500"
                   />
                 </div>
@@ -463,7 +463,15 @@ export const PuerperaChecklist: React.FC<PuerperaChecklistProps> = ({
 
             <div>
               <label className="text-[11px] font-semibold text-slate-500 block mb-1">TR Sífilis:</label>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-3 gap-1.5">
+                <Chip
+                  color="amber"
+                  active={!d.labExams?.trSifilis || d.labExams?.trSifilis === 'pendente'}
+                  onClick={() =>
+                    updateField('labExams', { ...d.labExams, trSifilis: 'pendente' })
+                  }
+                  label="Pendente"
+                />
                 <Chip
                   color="teal"
                   active={d.labExams?.trSifilis === 'nao_reagente'}
