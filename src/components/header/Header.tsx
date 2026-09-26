@@ -17,6 +17,8 @@ interface HeaderProps {
   setActiveTab: (tab: string) => void;
   onOpenBedManager: () => void;
   isCloudConnected?: boolean;
+  isCloudConfigured?: boolean;
+  pendingSyncCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,7 +26,9 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
   onOpenBedManager,
-  isCloudConnected = false
+  isCloudConnected = false,
+  isCloudConfigured = false,
+  pendingSyncCount = 0
 }) => {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
@@ -46,10 +50,23 @@ export const Header: React.FC<HeaderProps> = ({
                   <Cloud className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-emerald-600" />
                   <span className="hidden sm:inline">Nuvem</span>
                 </span>
+              ) : isCloudConfigured ? (
+                <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-full border border-amber-300" title="Sem conexão com o servidor. As alterações ficam guardadas neste aparelho e são enviadas quando a conexão voltar.">
+                  <CloudOff className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-600" />
+                  <span className="hidden sm:inline">Offline</span>
+                </span>
               ) : (
                 <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 text-[9px] sm:text-[10px] font-medium px-1.5 sm:px-2 py-0.5 rounded-full border border-slate-200" title="Modo Local: Dados salvos no navegador">
                   <CloudOff className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400" />
                   <span className="hidden sm:inline">Local</span>
+                </span>
+              )}
+              {isCloudConfigured && pendingSyncCount > 0 && (
+                <span
+                  className="inline-flex items-center bg-amber-100 text-amber-900 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-amber-300"
+                  title={`${pendingSyncCount} leito(s) com alterações aguardando envio ao servidor`}
+                >
+                  {pendingSyncCount} pend.
                 </span>
               )}
             </div>

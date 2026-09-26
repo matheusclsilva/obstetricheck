@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Header } from './components/header/Header';
 import { BedSelector } from './components/beds/BedSelector';
 import { BedInfoCard } from './components/beds/BedInfoCard';
@@ -39,11 +39,55 @@ import {
   subscribeToBeds
 } from './services/supabase';
 import {
-  queueBedSave,
-  saveBedImmediately,
+  queueBedPatch,
+  replaceBed,
   flushPendingBedSaves,
-  isBedLockedForRemoteSync
+  mergeIncomingBed,
+  reconcileBedLists,
+  forgetBed,
+  forgetAllBeds,
+  getPendingSyncCount,
+  onPendingSyncChange
 } from './services/bedSyncManager';
+
+/**
+ * Campos zerados de um leito na alta / nova admissão.
+ * TODOS os campos clínicos precisam ser limpos, senão a próxima paciente
+ * do leito herdaria HDA, exames, conduta, PA etc. da anterior.
+ */
+const clearedPatientFields = (): Partial<Bed> => ({
+  patientName: 'Vago',
+  age: '',
+  diagnosis: 'Leito disponível',
+  admissionDate: '',
+  admissionTime: '',
+  type: 'vago',
+  isReviewed: false,
+  avpSite: '',
+  avpDate: '',
+  pendencias: '',
+  intercorrencias: '',
+  obstetricHistory: '',
+  bloodPressure: '',
+  hda: '',
+  hdaDetails: '',
+  comorbidades: '',
+  muc: '',
+  alergias: '',
+  alergiaStatus: undefined,
+  queixasAdicionais: '',
+  internmentDays: 1,
+  examesLabText: '',
+  hdText: '',
+  condutaText: '',
+  rn: undefined,
+  atestadoPaciente: 'nao',
+  atestadoPacienteDias: '',
+  atestadoAcompanhante: 'nao',
+  atestadoAcompanhanteNome: '',
+  atestadoAcompanhanteDias: '',
+  data: createEmptyPuerpera()
+});
 
 export default function App() {
   const [beds, setBeds] = useState<Bed[]>(() => loadBedsFromStorage());
@@ -52,6 +96,27 @@ export default function App() {
   const [isBedManagerOpen, setIsBedManagerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isCloudActive, setIsCloudActive] = useState<boolean>(() => isSupabaseConfigured());
+  const [pendingSyncCount, setPendingSyncCount] = useState<number>(() => getPendingSyncCount());
+  const bedsRef = useRef<Bed[]>(beds);
+
+  useEffect(() => {
+    bedsRef.current = beds;
+  }, [beds]);
+
+  // Contador de alterações ainda não confirmadas pelo servidor (exibido no cabeçalho).
+  // Só aparece se a pendência durar mais de 2,5 s, para não piscar a cada tecla.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsubscribe = onPendingSyncChange((n) => {
+      if (timer) clearTimeout(timer);
+      if (n === 0) setPendingSyncCount(0);
+      else timer = setTimeout(() => setPendingSyncCount(getPendingSyncCount()), 2500);
+    });
+    return () => {
+      if (timer) clearTimeout(timer);
+      unsubscribe();
+    };
+  }, []);
 
   // Sincroniza a URL inicial e dá suporte aos botões Voltar/Avançar do navegador
   useEffect(() => {
@@ -78,67 +143,108 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Sincronização inicial e Realtime com o Supabase
+  // Sincronização com o Supabase: carga inicial, Realtime e ressincronização automática
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
 
     let isMounted = true;
-    fetchBedsFromSupabase()
-      .then(async (remoteBeds) => {
-        if (!isMounted) return;
-        if (remoteBeds && remoteBeds.length > 0) {
-          setBeds(remoteBeds);
-          setIsCloudActive(true);
-          // Preserva o leito que o usuário está olhando se ele existir no banco remoto
-          setActiveBedId((currentId) => {
-            const exists = remoteBeds.some((b) => b.id === currentId);
-            if (exists) return currentId;
-            const fallbackId = remoteBeds[0]?.id || 1;
-            saveActiveBedId(fallbackId);
-            syncNavigationUrl(fallbackId, activeTab);
-            return fallbackId;
-          });
-        } else {
-          // Se o banco remoto ainda estiver vazio, inicializa com os leitos padrão
-          await seedBedsToSupabase(beds);
-          setIsCloudActive(true);
-        }
-      })
-      .catch((err) => {
-        console.warn('Erro ao conectar com Supabase:', err);
-        setIsCloudActive(false);
-      });
+    let resyncRunning = false;
+    let lastResync = 0;
 
-    // Inscrição Realtime (alterações feitas em outro dispositivo chegam instantaneamente)
-    const unsubscribe = subscribeToBeds(
-      (incomingBed) => {
-        // Se este leito está em edição local ativa (com debounce ou editado nos últimos 3s),
-        // não sobrescrevemos a tela para não engolir o que o médico está digitando.
-        if (isBedLockedForRemoteSync(incomingBed.id)) {
+    const resync = async (reason: 'initial' | 'reconnect' | 'visible' | 'online' | 'interval') => {
+      if (!isMounted || resyncRunning) return;
+      if (reason !== 'initial' && Date.now() - lastResync < 3000) return;
+      resyncRunning = true;
+      lastResync = Date.now();
+      try {
+        // 1. Envia primeiro o que ficou pendente neste aparelho (ex.: editado sem internet)
+        await flushPendingBedSaves();
+        // 2. Busca o estado completo e atual do servidor
+        const result = await fetchBedsFromSupabase();
+        if (!isMounted) return;
+        if (!result.ok) {
+          // Falha de rede: NÃO sobrescreve nada; tenta de novo no próximo gatilho
+          setIsCloudActive(false);
           return;
         }
+        if (result.beds.length === 0) {
+          // Banco realmente vazio (primeiro uso): inicializa com os leitos deste aparelho
+          if (reason === 'initial') await seedBedsToSupabase(bedsRef.current);
+          setIsCloudActive(true);
+          return;
+        }
+        // 3. Mescla: edições dos colegas entram; o que está sendo digitado aqui é preservado
+        setBeds((prev) => reconcileBedLists(prev, result.beds));
+        setIsCloudActive(true);
+      } finally {
+        resyncRunning = false;
+      }
+    };
 
+    resync('initial');
+
+    // Inscrição Realtime (alterações feitas em outro dispositivo chegam instantaneamente)
+    let subscribedOnce = false;
+    const unsubscribe = subscribeToBeds(
+      (incomingBed) => {
         setBeds((prev) => {
           const index = prev.findIndex((b) => b.id === incomingBed.id);
           if (index >= 0) {
             const next = [...prev];
-            next[index] = incomingBed;
+            // Mescla campo a campo em vez de descartar: só o que está em edição local é mantido
+            next[index] = mergeIncomingBed(prev[index], incomingBed);
             return next;
           }
-          return [...prev, incomingBed];
+          return [...prev, mergeIncomingBed(undefined, incomingBed)].sort((a, b) => a.id - b.id);
         });
       },
       (deletedId) => {
+        forgetBed(deletedId);
         setBeds((prev) => prev.filter((b) => b.id !== deletedId));
+      },
+      (status) => {
+        if (!isMounted) return;
+        if (status === 'SUBSCRIBED') {
+          setIsCloudActive(true);
+          // Reconectou após queda: recupera tudo que mudou enquanto estava desconectado
+          if (subscribedOnce) resync('reconnect');
+          subscribedOnce = true;
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setIsCloudActive(false);
+        }
       }
     );
+
+    // Celular desbloqueado / aba reaberta / Wi-Fi voltou / checagem periódica
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') resync('visible');
+    };
+    const onOnline = () => resync('online');
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', onOnline);
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') resync('interval');
+    }, 120000);
 
     return () => {
       isMounted = false;
       unsubscribe();
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('online', onOnline);
+      clearInterval(interval);
       flushPendingBedSaves();
     };
   }, []);
+
+  // Se o leito ativo foi removido (aqui ou em outro aparelho), seleciona outro
+  useEffect(() => {
+    if (beds.length > 0 && !beds.some((b) => b.id === activeBedId)) {
+      const fallbackId = beds[0].id;
+      setActiveBedId(fallbackId);
+      saveActiveBedId(fallbackId);
+      syncNavigationUrl(fallbackId, activeTab);
+    }
+  }, [beds, activeBedId]);
 
   // Sincronização em Cache Local (LocalStorage) com debounce de 400ms para manter a digitação fluida
   useEffect(() => {
@@ -199,7 +305,7 @@ export default function App() {
       const index = prev.findIndex((b) => b.id === activeBedId);
       if (index === -1) return prev;
       const updated = { ...prev[index], ...updates };
-      queueBedSave(updated);
+      queueBedPatch(prev[index], updated);
       const next = [...prev];
       next[index] = updated;
       return next;
@@ -240,7 +346,7 @@ export default function App() {
         data: updatedData
       };
 
-      queueBedSave(updatedBed);
+      queueBedPatch(b, updatedBed);
       const next = [...prev];
       next[index] = updatedBed;
       return next;
@@ -249,8 +355,26 @@ export default function App() {
 
   const handleSetBedType = (type: BedType) => {
     setBeds((prev) =>
-      prev.map((b) => {
-        if (b.id !== activeBedId) return b;
+      prev.map((current) => {
+        if (current.id !== activeBedId) return current;
+        // Alta (-> vago): leito totalmente limpo.
+        // Admissão num leito vago: limpa dados clínicos que tenham sobrado, mas mantém a
+        // identificação que já foi digitada para a NOVA paciente (nome, idade, entrada, AVP).
+        let b: Bed = current;
+        if (type === 'vago') {
+          b = { ...current, ...clearedPatientFields() } as Bed;
+        } else if (current.type === 'vago') {
+          b = {
+            ...current,
+            ...clearedPatientFields(),
+            patientName: current.patientName,
+            age: current.age,
+            admissionDate: current.admissionDate,
+            admissionTime: current.admissionTime,
+            avpSite: current.avpSite,
+            avpDate: current.avpDate
+          } as Bed;
+        }
         let newData = b.data;
         let diagnosis = b.diagnosis;
 
@@ -280,7 +404,7 @@ export default function App() {
               ? `Paciente ${b.label}`
               : b.patientName
         };
-        saveBedImmediately(updated);
+        replaceBed(updated);
         return updated;
       })
     );
@@ -298,7 +422,8 @@ export default function App() {
             : `${b.label} marcado como PENDENTE`
         );
         const updated = { ...b, isReviewed: newStatus };
-        saveBedImmediately(updated);
+        // Só o campo "revisado" é enviado (não apaga edições de colegas no mesmo leito)
+        queueBedPatch(b, updated, 0);
         return updated;
       })
     );
@@ -308,22 +433,8 @@ export default function App() {
     setBeds((prev) =>
       prev.map((b) => {
         if (b.id !== bedId) return b;
-        const cleared: Bed = {
-          ...b,
-          patientName: 'Vago',
-          age: '',
-          diagnosis: 'Leito disponível',
-          admissionDate: '',
-          admissionTime: '',
-          type: 'vago',
-          isReviewed: false,
-          avpSite: '',
-          avpDate: '',
-          pendencias: '',
-          intercorrencias: '',
-          data: createEmptyPuerpera()
-        };
-        saveBedImmediately(cleared);
+        const cleared = { ...b, ...clearedPatientFields() } as Bed;
+        replaceBed(cleared);
         return cleared;
       })
     );
@@ -356,7 +467,7 @@ export default function App() {
     setActiveBedId(nextId);
     saveActiveBedId(nextId);
     syncNavigationUrl(nextId, activeTab);
-    saveBedImmediately(bed);
+    replaceBed(bed);
     showToast(`Novo leito ${bed.label} adicionado com sucesso!`);
   };
 
@@ -365,6 +476,7 @@ export default function App() {
       showToast('O sistema precisa de pelo menos um leito cadastrado.');
       return;
     }
+    forgetBed(bedId);
     setBeds((prev) => prev.filter((b) => b.id !== bedId));
     deleteBedFromSupabase(bedId);
     if (activeBedId === bedId) {
@@ -378,6 +490,7 @@ export default function App() {
   };
 
   const handleResetBeds = () => {
+    forgetAllBeds();
     setBeds(INITIAL_BEDS);
     const firstId = INITIAL_BEDS[0].id;
     setActiveBedId(firstId);
@@ -425,6 +538,8 @@ export default function App() {
         setActiveTab={handleTabChange}
         onOpenBedManager={() => setIsBedManagerOpen(true)}
         isCloudConnected={isCloudActive}
+        isCloudConfigured={isSupabaseConfigured()}
+        pendingSyncCount={pendingSyncCount}
       />
 
       {/* Horizontal Beds Selector */}

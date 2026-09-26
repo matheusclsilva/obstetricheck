@@ -73,6 +73,15 @@ Para sincronizar as evoluções e leitos entre vários dispositivos simultaneame
    ```
 4. Pronto! O sistema detectará as credenciais e ativará a sincronização em tempo real. Sem as chaves, o sistema continuará funcionando perfeitamente em modo offline com `localStorage`.
 
+### Atualização: salvamento por campo (projetos criados antes de 26/09/2026)
+
+Se o seu projeto Supabase já existia, rode também o arquivo [`supabase_migration_002_patch_bed.sql`](./supabase_migration_002_patch_bed.sql) no **SQL Editor**. Ele cria a função `patch_bed`, que permite a várias pessoas editarem o mesmo leito ao mesmo tempo sem uma apagar o que a outra digitou. Sem ela, o app funciona em modo de compatibilidade (menos protegido).
+
+**Como a sincronização funciona:**
+- Cada aparelho envia só os campos alterados; o servidor mescla.
+- Alterações feitas sem internet ficam numa fila no aparelho (mesmo se a página for fechada) e são enviadas quando a conexão voltar. O selo **Offline** / **N pend.** no cabeçalho indica isso.
+- Ao reconectar, desbloquear o celular ou a cada 2 minutos, o app busca o estado atual de todos os leitos.
+
 ---
 
 ## 📄 Licença

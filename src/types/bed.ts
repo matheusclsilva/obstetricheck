@@ -148,5 +148,7 @@ export interface Bed {
   hdText?: string;
   condutaText?: string;
   rn?: RNData;
+  /** Carimbo de tempo da última versão recebida do servidor (controle de sincronização). */
+  updatedAt?: string;
   data: PuerperaData | GestanteData | CuretagemData | any;
 }
